@@ -1,25 +1,71 @@
 import os
 
 import discord
-
-from dotenv import load_dotenv
+from discord.ext.commands.context import Context
 from discord.ext import commands
+from dotenv import load_dotenv
 
 #auth
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 
-client = commands.Bot(command_prefix='!')
+client = commands.Bot(command_prefix='?')
+
+
+@client.command(name='delete')
+async def delete(ctx: Context):
+    # delete an entry (key) trigger and (value) response from the dictionary
+    current_user = ctx.author
+    await ctx.send(
+        f'{current_user}: Enter the trigger\'s name to delete it\' entry:')
+    trigger = await client.wait_for('message',
+                                    check=lambda m: m.author == current_user)
+    trigger = trigger.content.lower().strip()
+    if trigger in trigger_response.keys():
+        response = trigger_response[trigger]
+        del trigger_response[trigger]
+        await ctx.send(
+            f'{current_user}: "Trigger {trigger}" with response "{response}" was deleted with success'
+        )
+    else:
+        await ctx.send(f'{current_user}: {trigger} does not exist!')
+
+
+@client.command(name='add')
+async def admin_add_trigger_response(ctx: Context):
+    # admin to add a trigger, response to the (key) trigger and (value) response dictionary
+    current_user = ctx.author
+    await ctx.send(f'{current_user}: Please add a new trigger:')
+
+    trigger = await client.wait_for('message',
+                                    check=lambda m: m.author == current_user)
+    trigger = trigger.content.lower().strip()
+
+    if trigger in trigger_response.keys():
+        await ctx.send(
+            f'{current_user}: The trigger: "{trigger}" already exists!')
+        return
+    else:
+        await ctx.send(f'{current_user}: Now add a response to the trigger:')
+        response = await client.wait_for(
+            'message', check=lambda m: m.author == current_user)
+        response = response.content.lower().strip()
+        await ctx.send(
+            f'{current_user} Trigger: "{trigger}" with response: "{response}" added with success!!'
+        )
+        trigger_response[trigger] = response
 
 
 @client.event
 async def on_message(message):
     # get user message and send him a response based on the dictionary: trigger_key - response_value
+    current_user = message.author
     if message.author == client.user:
         return
+    msg = message.content.lower().strip()
 
-    if message.content.lower().strip() in trigger_response.keys():
+    if msg in trigger_response.keys():
         await message.channel.send(trigger_response[message.content.lower()])
 
     elif message.content == 'raise-exception':
@@ -27,9 +73,10 @@ async def on_message(message):
     await client.process_commands(message)
 
 
-@client.command(name="hi")
-async def hi(ctx):
-    await ctx.send("hi")
+@client.command()
+async def clear(ctx, amount=1000):
+    # clear last amount of messages
+    await ctx.channel.purge(limit=amount)
 
 
 @client.event
@@ -52,6 +99,7 @@ async def on_ready():
 
 
 def get_trigger_response():
+    #return the dictionary that stores the key: trigger with value: response
     trigger_response = {
         'security':
         r'*Recovery Process*, **SwissBorg and Curv**, *Recovery Phrase*, **Passcode Requirements**, *Phishing*, **Avoiding cryptocurrency scams**, *Changing passcode* **Bitcoin address changing** https://help.swissborg.com/hc/en-gb/sections/360001822578-Security',
@@ -84,5 +132,5 @@ def get_trigger_response():
 if __name__ == "__main__":
 
     trigger_response = get_trigger_response()
-
+    test_trigger = trigger_response.copy()
     client.run(TOKEN)
