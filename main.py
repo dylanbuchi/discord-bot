@@ -10,7 +10,7 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 
-client = discord.Client()
+client = commands.Bot(command_prefix='!')
 
 
 @client.event
@@ -21,8 +21,15 @@ async def on_message(message):
 
     if message.content.lower().strip() in trigger_response.keys():
         await message.channel.send(trigger_response[message.content.lower()])
+
     elif message.content == 'raise-exception':
         raise discord.DiscordException
+    await client.process_commands(message)
+
+
+@client.command(name="hi")
+async def hi(ctx):
+    await ctx.send("hi")
 
 
 @client.event
@@ -76,7 +83,6 @@ def get_trigger_response():
 
 if __name__ == "__main__":
 
-    bot = commands.Bot(command_prefix='!')
     trigger_response = get_trigger_response()
 
     client.run(TOKEN)
