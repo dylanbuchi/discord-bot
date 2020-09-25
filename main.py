@@ -1,8 +1,9 @@
 import os
+import re
 
 import discord
-from discord.ext.commands.context import Context
 from discord.ext import commands
+from discord.ext.commands.context import Context
 from dotenv import load_dotenv
 
 #auth
@@ -61,13 +62,13 @@ async def admin_add_trigger_response(ctx: Context):
 async def on_message(message):
     # get user message and send him a response based on the dictionary: trigger_key - response_value
     current_user = message.author
+
     if message.author == client.user:
         return
     msg = message.content.lower().strip()
-
-    if msg in trigger_response.keys():
-        await message.channel.send(trigger_response[message.content.lower()])
-
+    is_valid, trigger = is_pattern_valid(msg)
+    if is_valid or msg in trigger_response.keys():
+        await message.channel.send(trigger_response[trigger])
     elif message.content == 'raise-exception':
         raise discord.DiscordException
     await client.process_commands(message)
@@ -127,6 +128,14 @@ def get_trigger_response():
         r'**Duration of international deposits and withdrawals,** *Withdrawal and Deposit Fees Fiats,* **Bank Withdrawal,** *Crypto Withdrawal,* **Withdrawal fees Virtual Currencies,** *Duration of international withdrawals,* **Withdrawal Fees Fiats** https://help.swissborg.com/hc/en-gb/sections/360001817638-Deposits-Withdrawal'
     }
     return trigger_response
+
+
+def is_pattern_valid(user_msg):
+    # get regex pattern to match everything before and after the trigger
+    # and return the clean trigger
+    lst = re.findall(r"(?=(" + '|'.join(trigger_response) + r"))", user_msg)
+    result = ''.join(lst)
+    return result in trigger_response.keys(), result
 
 
 if __name__ == "__main__":
