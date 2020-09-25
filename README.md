@@ -1,2 +1,2 @@
-# twitter-bot
-creating a twitter bot with the Twitter API
+# Discord-bot
+creating a discord bot with the Discord API
