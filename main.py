@@ -1,23 +1,28 @@
 import os
 
 import discord
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
+from discord.ext import commands
+
+#auth
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 
 client = discord.Client()
-print()
 
 
 @client.event
 async def on_message(message):
+    # get user message and send him a response based on the dictionary: trigger_key - response_value
     if message.author == client.user:
         return
 
-    if message.content.lower() in trigger_response.keys():
+    if message.content.lower().strip() in trigger_response.keys():
         await message.channel.send(trigger_response[message.content.lower()])
+    elif message.content == 'raise-exception':
+        raise discord.DiscordException
 
 
 @client.event
@@ -39,7 +44,7 @@ async def on_ready():
     print(f'Guild Members:\n - {members}')
 
 
-if __name__ == "__main__":
+def get_trigger_response():
     trigger_response = {
         'security':
         r'*Recovery Process*, **SwissBorg and Curv**, *Recovery Phrase*, **Passcode Requirements**, *Phishing*, **Avoiding cryptocurrency scams**, *Changing passcode* **Bitcoin address changing** https://help.swissborg.com/hc/en-gb/sections/360001822578-Security',
@@ -66,5 +71,12 @@ if __name__ == "__main__":
         'withdraw':
         r'**Duration of international deposits and withdrawals,** *Withdrawal and Deposit Fees Fiats,* **Bank Withdrawal,** *Crypto Withdrawal,* **Withdrawal fees Virtual Currencies,** *Duration of international withdrawals,* **Withdrawal Fees Fiats** https://help.swissborg.com/hc/en-gb/sections/360001817638-Deposits-Withdrawal'
     }
+    return trigger_response
+
+
+if __name__ == "__main__":
+
+    bot = commands.Bot(command_prefix='!')
+    trigger_response = get_trigger_response()
 
     client.run(TOKEN)
