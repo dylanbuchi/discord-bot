@@ -20,17 +20,18 @@ def get_auth():
 
 
 @client.command(name='delete')
-async def delete(ctx: Context):
+async def admin_delete_trigger(ctx: Context):
     # delete an entry (key) trigger and (value) response from the dictionary
     current_user = ctx.author
     await ctx.send(
-        f'{current_user}: Enter the trigger\'s name to delete it\' entry:')
+        f'{current_user}: Enter the trigger\'s name to delete it\'s entry:')
     trigger = await client.wait_for('message',
                                     check=lambda m: m.author == current_user)
     trigger = trigger.content.lower().strip()
     if trigger in trigger_response.keys():
         response = trigger_response[trigger]
         del trigger_response[trigger]
+        update_trigger_file(trigger_response, trigger_file)
         await ctx.send(
             f'{current_user}: "Trigger {trigger}" with response "{response}" was deleted with success'
         )
@@ -39,7 +40,7 @@ async def delete(ctx: Context):
 
 
 @client.command(name='add')
-async def admin_add_trigger_response(ctx: Context):
+async def admin_add_trigger(ctx: Context):
     # admin to add a trigger, response to the (key) trigger and (value) response dictionary
     current_user = ctx.author
     await ctx.send(f'{current_user}: Please add a new trigger:')
@@ -61,6 +62,7 @@ async def admin_add_trigger_response(ctx: Context):
             f'{current_user} Trigger: "{trigger}" with response: "{response}" added with success!!'
         )
         trigger_response[trigger] = response
+        update_trigger_file(trigger_response, trigger_file)
 
 
 @client.event
@@ -106,7 +108,7 @@ async def on_ready():
     print(f'Guild Members:\n - {members}')
 
 
-def get_trigger_response(trigger_file):
+def load_triggers_file(trigger_file):
     #load the trigger.txt file in json format and return as a
     #dictionary that stores the key: trigger with value: response
     trigger_path = f"data\\{trigger_file}"
@@ -127,11 +129,21 @@ def get_clean_trigger_from(user_msg):
     return result
 
 
+def update_trigger_file(dic, trigger_file):
+    # rewrite the file when deleting
+    trigger_path = f"data\\{trigger_file}"
+    json.dump(dic,
+              open(trigger_path, 'w'),
+              sort_keys=True,
+              indent=4,
+              separators=(',', ': '))
+
+
 if __name__ == "__main__":
 
     TOKEN, GUILD = get_auth()
-    trigger_file = 'triggers.txt'
+    trigger_file = 'triggers.json'
 
-    trigger_response = get_trigger_response(trigger_file)
-    test_trigger = trigger_response.copy()
+    trigger_response = load_triggers_file(trigger_file)
+
     client.run(TOKEN)
