@@ -1,11 +1,11 @@
 import os
 import re
 import json
-
 import discord
 from discord.ext import commands
 from discord.ext.commands.context import Context
 from dotenv import load_dotenv
+import server_info
 
 #for client decorator
 client = commands.Bot(command_prefix='?')
@@ -84,7 +84,7 @@ async def on_message(message):
 
 
 @client.command()
-async def clear(ctx, amount=1000):
+async def clear(ctx, amount=10):
     # clear last amount of messages
     await ctx.channel.purge(limit=amount)
 
@@ -99,13 +99,16 @@ async def on_member_join(member):
 
 @client.event
 async def on_ready():
-    # check guild members and server name
-    guild = discord.utils.get(client.guilds, name=GUILD)
-    print(f'{client.user} is connected to the following guild:\n'
-          f'{guild.name}(id: {guild.id})')
+    print("READY")
 
-    members = '\n - '.join([member.name for member in guild.members])
-    print(f'Guild Members:\n - {members}')
+
+# check guild members and server name
+# guild = discord.utils.get(client.guilds, name=GUILD)
+# print(f'{client.user} is connected to the following guild:\n'
+#       f'{guild.name}(id: {guild.id})')
+
+# members = '\n - '.join([member.name for member in guild.members])
+# print(f'Guild Members:\n - {members}')
 
 
 def load_triggers_file(trigger_file):
@@ -137,6 +140,12 @@ def update_trigger_file(dic, trigger_file):
               sort_keys=True,
               indent=4,
               separators=(',', ': '))
+
+
+@client.command(name="server")
+async def get_server_info(ctx):
+    # display server info
+    await server_info.server_info(ctx)
 
 
 if __name__ == "__main__":
