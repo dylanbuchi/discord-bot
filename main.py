@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands.context import Context
 from dotenv import load_dotenv
-import server_info
+import bot.server_info
 
 #for client decorator
 client = commands.Bot(command_prefix='?')
@@ -189,7 +189,7 @@ def update_trigger_file(dic, trigger_file):
 @client.command(name="server")
 async def get_server_info(ctx):
     # display server info
-    await server_info.server_info(ctx)
+    await bot.server_info.server_info(ctx)
 
 
 if __name__ == "__main__":
