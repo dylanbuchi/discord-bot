@@ -1,4 +1,5 @@
 import os
+from os import name
 import re
 import json
 import discord
@@ -21,6 +22,17 @@ def get_auth():
 
 def get_len_file(file_name):
     return os.path.getsize(f'data\\{file_name}')
+
+
+@client.command(name="list")
+async def list_json(ctx):
+    current_user = ctx.author
+    file_name = f'{ctx.guild.name}-{ctx.guild.id}.json'
+    print(file_name)
+
+    html = f"https://raw.githubusercontent.com/dylanbuchi/discord_bot/master/data/{file_name}"
+
+    await ctx.send(f'{current_user}: {html}')
 
 
 @client.event
