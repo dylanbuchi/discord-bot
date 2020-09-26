@@ -1,17 +1,22 @@
 import os
 import re
+import json
 
 import discord
 from discord.ext import commands
 from discord.ext.commands.context import Context
 from dotenv import load_dotenv
 
-#auth
-load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
-GUILD = os.getenv('DISCORD_GUILD')
-
+#for client decorator
 client = commands.Bot(command_prefix='?')
+
+
+def get_auth():
+    #get tokens and auth for the bot
+    load_dotenv()
+    token = os.getenv('DISCORD_TOKEN')
+    guild = os.getenv('DISCORD_GUILD')
+    return token, guild
 
 
 @client.command(name='delete')
@@ -60,15 +65,17 @@ async def admin_add_trigger_response(ctx: Context):
 
 @client.event
 async def on_message(message):
-    # get user message and send him a response based on the dictionary: trigger_key - response_value
+    # get user message and send him a response based on the dict: trigger_key - response_value
     current_user = message.author
+    msg = message.content.lower().strip()
+    trigger = get_clean_trigger_from(msg)
 
     if message.author == client.user:
         return
-    msg = message.content.lower().strip()
-    is_valid, trigger = is_pattern_valid(msg)
-    if is_valid or msg in trigger_response.keys():
+
+    if is_user_trigger_valid(msg) or msg in trigger_response.keys():
         await message.channel.send(trigger_response[trigger])
+
     elif message.content == 'raise-exception':
         raise discord.DiscordException
     await client.process_commands(message)
@@ -99,47 +106,32 @@ async def on_ready():
     print(f'Guild Members:\n - {members}')
 
 
-def get_trigger_response():
-    #return the dictionary that stores the key: trigger with value: response
-    trigger_response = {
-        'security':
-        r'*Recovery Process*, **SwissBorg and Curv**, *Recovery Phrase*, **Passcode Requirements**, *Phishing*, **Avoiding cryptocurrency scams**, *Changing passcode* **Bitcoin address changing** https://help.swissborg.com/hc/en-gb/sections/360001822578-Security',
-        'wealth app':
-        r'Response: **General Questions**, *Opening an Account*, **Exchanges (Buy & Sell)**, *Deposits & Withdrawal*, **Security** https://help.swissborg.com/hc/en-gb/categories/360000942957-Wealth-App',
-        'chsb token':
-        r'*What is the CHSB Token?* **What is Protect & Burn mechanism?** *What is ERC-20?* **Why staking your CHSB?** https://help.swissborg.com/hc/en-gb/sections/360001463778-CHSB-Token',
-        'help':
-        r'Here is the list of categories you can call: **what is Swissborg**, *SwissBorg Ecosystem*, **KYC**, *deposit*, **withdraw**, *exchange*, **security**, *community app*, **wealth app**, *chsb token* , **DAO**. https://help.swissborg.com/hc/en-gb',
-        'dao':
-        r'**General Questions**, *Platform Registration*, **Missions**, *Guilds & Campaign*, **Discord Forum**, *Rewards*. https://help.swissborg.com/hc/en-gb/categories/360000820358-DAO',
-        'kyc':
-        r'**Getting Started**, *KYC and AML*, KYC Level 1, KYC Level 2, KYC Level 3, Add Additional Documents **(if asked)** https://help.swissborg.com/hc/en-gb/sections/360001845297-Opening-an-Account',
-        'swissborg ecosystem':
-        r'**General**, *CHSB Token*, **Referendum**, *Legal* https://help.swissborg.com/hc/en-gb/categories/360000817017-SwissBorg-Ecosystem',
-        'what is swissborg':
-        r'if you want to know more about SwissBorg Ecosystem, *The Vision and the Method of SwissBorg*, **What is SwissBorg?** check this link https://help.swissborg.com/hc/en-gb/sections/360001463278-General',
-        'deposit':
-        r'**Bank Deposit,** *Deposit in other currencies,* **Deposit in EUR**, *Deposit in CHF*, **Deposit in GBP**, *Deposit with Revolut account*, **Duration of international deposits and withdrawals**, *IBAN, SWIFT*, **Withdrawal and Deposit Fees Fiats**, *Crypto Deposit*, **Pending Deposits** https://help.swissborg.com/hc/en-gb/sections/360001817638-Deposits-Withdrawal',
-        'exchange':
-        r'**Perform an exchange** *Check the order details* **Market Orders** *Cancel an order* **Available Trading Pairs** *Transaction Fees* **Hourly Asset Analysis** https://help.swissborg.com/hc/en-gb/sections/360001826237-Exchanges-Buy-Sell-',
-        'community app':
-        r'**General Questions**, *Rules of the Game and How to Play*, **Forecasting Bitcoin Price**, *Rewards* https://help.swissborg.com/hc/en-gb/categories/360001275454-Community-App',
-        'withdraw':
-        r'**Duration of international deposits and withdrawals,** *Withdrawal and Deposit Fees Fiats,* **Bank Withdrawal,** *Crypto Withdrawal,* **Withdrawal fees Virtual Currencies,** *Duration of international withdrawals,* **Withdrawal Fees Fiats** https://help.swissborg.com/hc/en-gb/sections/360001817638-Deposits-Withdrawal'
-    }
-    return trigger_response
+def get_trigger_response(trigger_file):
+    #load the trigger.txt file in json format and return as a
+    #dictionary that stores the key: trigger with value: response
+    trigger_path = f"data\\{trigger_file}"
+    return json.load(open(trigger_path))
 
 
-def is_pattern_valid(user_msg):
+def is_user_trigger_valid(user_msg):
+    # check if the trigger is valid
+    trigger = get_clean_trigger_from(user_msg)
+    return trigger in trigger_response
+
+
+def get_clean_trigger_from(user_msg):
     # get regex pattern to match everything before and after the trigger
     # and return the clean trigger
     lst = re.findall(r"(?=(" + '|'.join(trigger_response) + r"))", user_msg)
     result = ''.join(lst)
-    return result in trigger_response.keys(), result
+    return result
 
 
 if __name__ == "__main__":
 
-    trigger_response = get_trigger_response()
+    TOKEN, GUILD = get_auth()
+    trigger_file = 'triggers.txt'
+
+    trigger_response = get_trigger_response(trigger_file)
     test_trigger = trigger_response.copy()
     client.run(TOKEN)
