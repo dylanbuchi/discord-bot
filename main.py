@@ -19,9 +19,35 @@ def get_auth():
     return token, guild
 
 
+def get_len_file(file_name):
+    return os.path.getsize(f'data\\{file_name}')
+
+
+@client.event
+async def on_guild_join(guild):
+    guild_path = f'data\\{guild.name}-{guild.id}.json'
+    print(guild_path)
+    print(os.path.exists(guild_path))
+    if not os.path.exists(guild_path):
+        with open(guild_path, "w") as f:
+            pass
+    else:
+        json.load(open(guild_path))
+
+
+@client.event
+async def on_guild_remove(guild):
+    print("REMOVED")
+
+
 @client.command(name='delete')
-async def admin_delete_trigger(ctx: Context):
+async def admin_delete_trigger(ctx):
     # delete an entry (key) trigger and (value) response from the dictionary
+    file_name = f'{ctx.guild.name}-{ctx.guild.id}.json'
+    if get_len_file(file_name) > 0:
+        trigger_response = load_triggers_file(file_name)
+    else:
+        trigger_response = {}
     current_user = ctx.author
     await ctx.send(
         f'{current_user}: Enter the trigger\'s name to delete it\'s entry:')
@@ -31,7 +57,7 @@ async def admin_delete_trigger(ctx: Context):
     if trigger in trigger_response.keys():
         response = trigger_response[trigger]
         del trigger_response[trigger]
-        update_trigger_file(trigger_response, trigger_file)
+        update_trigger_file(trigger_response, file_name)
         await ctx.send(
             f'{current_user}: "Trigger {trigger}" with response "{response}" was deleted with success'
         )
@@ -40,9 +66,14 @@ async def admin_delete_trigger(ctx: Context):
 
 
 @client.command(name='add')
-async def admin_add_trigger(ctx: Context):
+async def admin_add_trigger(ctx):
     # admin to add a trigger, response to the (key) trigger and (value) response dictionary
     current_user = ctx.author
+    file_name = f'{ctx.guild.name}-{ctx.guild.id}.json'
+    if get_len_file(file_name) > 0:
+        trigger_response = load_triggers_file(file_name)
+    else:
+        trigger_response = {}
     await ctx.send(f'{current_user}: Please add a new trigger:')
 
     trigger = await client.wait_for('message',
@@ -62,31 +93,32 @@ async def admin_add_trigger(ctx: Context):
             f'{current_user} Trigger: "{trigger}" with response: "{response}" added with success!!'
         )
         trigger_response[trigger] = response
-        update_trigger_file(trigger_response, trigger_file)
+        update_trigger_file(trigger_response, file_name)
 
 
 @client.event
 async def on_message(message):
     # get user message and send him a response based on the dict: trigger_key - response_value
+    file_name = f'{message.guild.name}-{message.guild.id}.json'
+
+    if get_len_file(file_name) > 0:
+        trigger_response = load_triggers_file(file_name)
+    else:
+        trigger_response = {}
     current_user = message.author
     msg = message.content.lower().strip()
-    trigger = get_clean_trigger_from(msg)
+    trigger = get_clean_trigger_from(msg, trigger_response)
 
     if message.author == client.user:
         return
 
-    if is_user_trigger_valid(msg) or msg in trigger_response.keys():
+    if is_user_trigger_valid(
+            msg, trigger_response) or msg in trigger_response.keys():
         await message.channel.send(trigger_response[trigger])
 
     elif message.content == 'raise-exception':
         raise discord.DiscordException
     await client.process_commands(message)
-
-
-@client.command()
-async def clear(ctx, amount=10):
-    # clear last amount of messages
-    await ctx.channel.purge(limit=amount)
 
 
 @client.event
@@ -118,16 +150,16 @@ def load_triggers_file(trigger_file):
     return json.load(open(trigger_path))
 
 
-def is_user_trigger_valid(user_msg):
+def is_user_trigger_valid(user_msg, dic):
     # check if the trigger is valid
-    trigger = get_clean_trigger_from(user_msg)
-    return trigger in trigger_response
+    trigger = get_clean_trigger_from(user_msg, dic)
+    return trigger in dic
 
 
-def get_clean_trigger_from(user_msg):
+def get_clean_trigger_from(user_msg, dic):
     # get regex pattern to match everything before and after the trigger
     # and return the clean trigger
-    lst = re.findall(r"(?=(" + '|'.join(trigger_response) + r"))", user_msg)
+    lst = re.findall(r"(?=(" + '|'.join(dic) + r"))", user_msg)
     result = ''.join(lst)
     return result
 
@@ -151,8 +183,5 @@ async def get_server_info(ctx):
 if __name__ == "__main__":
 
     TOKEN, GUILD = get_auth()
-    trigger_file = 'triggers.json'
-
-    trigger_response = load_triggers_file(trigger_file)
 
     client.run(TOKEN)
