@@ -1,12 +1,12 @@
+import mongodb
 import os
-from os import name
 import re
 import json
 import discord
 from discord.ext import commands
-from discord.ext.commands.context import Context
 from dotenv import load_dotenv
 import server_info
+from bson.json_util import CANONICAL_JSON_OPTIONS, dumps
 
 #for client decorator
 client = commands.Bot(command_prefix='?')
@@ -37,12 +37,19 @@ async def list_json(ctx):
 
 @client.event
 async def on_guild_join(guild):
-    guild_path = f'data\\{guild.name}-{guild.id}.json'
+    guild_id = guild.id
+    guild_path = f'data\\{guild.name}-{guild_id}.json'
     print(guild_path)
     print(os.path.exists(guild_path))
     if not os.path.exists(guild_path):
+        post = {'_id': guild_id, 'server name': guild.name}
+        COLLECTION.insert_one(post)
         with open(guild_path, "w") as f:
-            pass
+            json.dump(post,
+                      open(guild_path, 'w'),
+                      sort_keys=True,
+                      indent=4,
+                      separators=(',', ': '))
     else:
         json.load(open(guild_path))
 
@@ -68,6 +75,8 @@ async def admin_delete_trigger(ctx):
     trigger = trigger.content.lower().strip()
     if trigger in trigger_response.keys():
         response = trigger_response[trigger]
+        post = {'_id': int(ctx.guild.id)}
+        COLLECTION.update_one(post, {'$unset': {trigger: response}})
         del trigger_response[trigger]
         update_trigger_file(trigger_response, file_name)
         await ctx.send(
@@ -105,6 +114,8 @@ async def admin_add_trigger(ctx):
             f'{current_user} Trigger: "{trigger}" with response: "{response}" added with success!!'
         )
         trigger_response[trigger] = response
+        post = {'_id': int(ctx.guild.id)}
+        COLLECTION.update_one(post, {'$set': {trigger: response}})
         update_trigger_file(trigger_response, file_name)
 
 
@@ -113,6 +124,8 @@ async def on_message(message):
     # get user message and send him a response based on the dict: trigger_key - response_value
     file_name = f'{message.guild.name}-{message.guild.id}.json'
 
+    if message.author == client.user:
+        return
     if get_len_file(file_name) > 0:
         trigger_response = load_triggers_file(file_name)
     else:
@@ -120,9 +133,6 @@ async def on_message(message):
     current_user = message.author
     msg = message.content.lower().strip()
     trigger = get_clean_trigger_from(msg, trigger_response)
-
-    if message.author == client.user:
-        return
 
     if is_user_trigger_valid(
             msg, trigger_response) or msg in trigger_response.keys():
@@ -193,7 +203,6 @@ async def get_server_info(ctx):
 
 
 if __name__ == "__main__":
-
     TOKEN, GUILD = get_auth()
-
+    CLIENT, DB, COLLECTION = mongodb.get_database('triggers')
     client.run(TOKEN)
