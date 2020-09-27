@@ -1,5 +1,7 @@
+from discord.client import Client
+from pymongo.errors import AutoReconnect
 import mongodb
-
+import dns
 import json
 import os
 import re
@@ -117,8 +119,8 @@ async def admin_add_trigger(ctx):
         )
         trigger_response[trigger] = response
         post = {'_id': int(ctx.guild.id)}
-        COLLECTION.update_one(post, {'$set': {trigger: response}})
         update_trigger_file(trigger_response, file_name)
+        COLLECTION.update_one(post, {'$set': {trigger: response}})
 
 
 @client.event
@@ -205,6 +207,9 @@ async def get_server_info(ctx):
 
 
 if __name__ == "__main__":
+
     TOKEN, GUILD = get_auth()
     CLIENT, DB, COLLECTION = mongodb.get_database('triggers')
+
     client.run(TOKEN)
+    CLIENT.close()
