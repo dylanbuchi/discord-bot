@@ -46,13 +46,14 @@ async def on_guild_join(guild):
     if not os.path.exists(guild_path):
         post = {'_id': guild_id, 'server name': guild.name}
         COLLECTION.insert_one(post)
+        repo_create_file(f'{guild.name}-{guild_id}', post)
         with open(guild_path, "w") as f:
             json.dump(post,
                       open(guild_path, 'w'),
                       sort_keys=True,
                       indent=4,
                       separators=(',', ': '))
-        repo_create_file(REPO_NAME, f'{guild.name}-{guild_id}.json', post)
+
     else:
         json.load(open(guild_path))
 
@@ -96,9 +97,9 @@ def repo_update_file(REPO_NAME, file_name, data):
         json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
 
 
-def repo_create_file(REPO_NAME, file_name, data):
+def repo_create_file(file_name, data):
     bot.githubapi.github_create_file(
-        REPO_NAME, f'data/{file_name}',
+        REPO_NAME, f'data/{file_name}.json',
         f"create file {file_name} in data folder",
         json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
 
