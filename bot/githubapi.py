@@ -30,3 +30,11 @@ def github_file_update(
 def github_create_file(reponame, pathfile, msg, data):
     repo = get_repo(reponame)
     repo.create_file(pathfile, msg, data)
+
+
+def get_raw_url(reponame, pathfile):
+
+    repo = get_repo(reponame)
+    dic = repo.get_contents(pathfile).raw_data
+    raw_url = dic['download_url']
+    return raw_url

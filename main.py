@@ -29,9 +29,10 @@ def get_len_file(file_name):
 async def list_json(ctx):
     current_user = ctx.author
     file_name = f'{ctx.guild.name}-{ctx.guild.id}.json'
+    print(file_name)
+    url = f"data/{file_name}"
+    html = str(bot.githubapi.get_raw_url(REPO_NAME, url))
 
-    html = f"https://raw.githubusercontent.com/dylanbuchi/discord_bot/master/data/{file_name}".replace(
-        ' ', '').strip()
     #https://raw.githubusercontent.com/dylanbuchi/discord_bot/master/data/dougg%27s server-759957281671872513.json
     await ctx.send(f'{current_user}: {html}')
 
