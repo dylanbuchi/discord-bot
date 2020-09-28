@@ -228,6 +228,6 @@ if __name__ == "__main__":
     CLIENT, DB, COLLECTION = bot.mongodb.get_database('triggers')
 
     REPO_NAME = 'discord_bot'
-
     client.run(TOKEN)
+
     CLIENT.close()
