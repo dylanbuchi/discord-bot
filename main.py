@@ -97,7 +97,7 @@ def repo_update_file(REPO_NAME, file_name, data):
 
 
 def repo_create_file(REPO_NAME, file_name, data):
-    bot.githubapi.github_file_update(
+    bot.githubapi.github_create_file(
         REPO_NAME, f'data/{file_name}',
         f"create file {file_name} in data folder",
         json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
