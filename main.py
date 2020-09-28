@@ -82,7 +82,8 @@ async def admin_delete_trigger(ctx):
         post = {'_id': int(ctx.guild.id)}
         COLLECTION.update_one(post, {'$unset': {trigger: response}})
         del trigger_response[trigger]
-        repo_update_file(REPO_NAME, file_name, trigger_response)
+        msg = 'delete'
+        repo_update_file(REPO_NAME, file_name, trigger_response, msg)
         update_trigger_file(trigger_response, file_name)
         await ctx.send(
             f'{current_user}: "Trigger {trigger}" with response "{response}" was deleted with success'
@@ -91,9 +92,9 @@ async def admin_delete_trigger(ctx):
         await ctx.send(f'{current_user}: {trigger} does not exist!')
 
 
-def repo_update_file(REPO_NAME, file_name, data):
+def repo_update_file(REPO_NAME, file_name, data, msg='update'):
     bot.githubapi.github_file_update(
-        REPO_NAME, f'data/{file_name}', f"update data in file {file_name}",
+        REPO_NAME, f'data/{file_name}', f"{msg} data in file {file_name}",
         json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
 
 
