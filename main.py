@@ -30,7 +30,8 @@ async def list_json(ctx):
     current_user = ctx.author
     file_name = f'{ctx.guild.name}-{ctx.guild.id}.json'
 
-    html = f"https://raw.githubusercontent.com/dylanbuchi/discord_bot/master/data/{file_name}"
+    html = f"https://raw.githubusercontent.com/dylanbuchi/discord_bot/master/data/{file_name}".replace(
+        ' ', '').strip()
     #https://raw.githubusercontent.com/dylanbuchi/discord_bot/master/data/dougg%27s server-759957281671872513.json
     await ctx.send(f'{current_user}: {html}')
 
@@ -38,8 +39,7 @@ async def list_json(ctx):
 @client.event
 async def on_guild_join(guild):
     guild_id = guild.id
-    guild_path = f'data\\{guild.name}-{guild_id}.json'.replace(' ',
-                                                               '-').strip()
+    guild_path = f'data\\{guild.name}-{guild_id}.json'
     print(guild_path)
     print(os.path.exists(guild_path))
     if not os.path.exists(guild_path):
@@ -51,9 +51,7 @@ async def on_guild_join(guild):
                       sort_keys=True,
                       indent=4,
                       separators=(',', ': '))
-        repo_create_file(
-            REPO_NAME,
-            f'{guild.name}-{guild_id}.json'.replace(' ', '-').strip(), post)
+        repo_create_file(REPO_NAME, f'{guild.name}-{guild_id}', post)
     else:
         json.load(open(guild_path))
 
