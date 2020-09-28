@@ -1,12 +1,9 @@
-from discord.client import Client
-from pymongo.errors import AutoReconnect
-import mongodb
-import dns
+import bot.mongodb
 import json
 import os
 import re
-
 import discord
+import bot.githubapi
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -32,7 +29,6 @@ def get_len_file(file_name):
 async def list_json(ctx):
     current_user = ctx.author
     file_name = f'{ctx.guild.name}-{ctx.guild.id}.json'
-    print(file_name)
 
     html = f"https://raw.githubusercontent.com/dylanbuchi/discord_bot/master/data/{file_name}"
 
@@ -82,12 +78,19 @@ async def admin_delete_trigger(ctx):
         post = {'_id': int(ctx.guild.id)}
         COLLECTION.update_one(post, {'$unset': {trigger: response}})
         del trigger_response[trigger]
+        github_update_file(REPO_NAME, file_name, trigger_response)
         update_trigger_file(trigger_response, file_name)
         await ctx.send(
             f'{current_user}: "Trigger {trigger}" with response "{response}" was deleted with success'
         )
     else:
         await ctx.send(f'{current_user}: {trigger} does not exist!')
+
+
+def github_update_file(REPO_NAME, file_name, data):
+    bot.githubapi.github_file_update(
+        REPO_NAME, f'data/{file_name}', f"update data in file {file_name}",
+        json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
 
 
 @client.command(name='add')
@@ -120,6 +123,7 @@ async def admin_add_trigger(ctx):
         trigger_response[trigger] = response
         post = {'_id': int(ctx.guild.id)}
         update_trigger_file(trigger_response, file_name)
+        github_update_file(REPO_NAME, file_name, trigger_response)
         COLLECTION.update_one(post, {'$set': {trigger: response}})
 
 
@@ -209,7 +213,9 @@ async def get_server_info(ctx):
 if __name__ == "__main__":
 
     TOKEN, GUILD = get_auth()
-    CLIENT, DB, COLLECTION = mongodb.get_database('triggers')
+    CLIENT, DB, COLLECTION = bot.mongodb.get_database('triggers')
+
+    REPO_NAME = 'discord_bot'
 
     client.run(TOKEN)
     CLIENT.close()
