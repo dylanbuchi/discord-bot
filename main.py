@@ -31,14 +31,15 @@ async def list_json(ctx):
     file_name = f'{ctx.guild.name}-{ctx.guild.id}.json'
 
     html = f"https://raw.githubusercontent.com/dylanbuchi/discord_bot/master/data/{file_name}"
-
+    #https://raw.githubusercontent.com/dylanbuchi/discord_bot/master/data/dougg%27s server-759957281671872513.json
     await ctx.send(f'{current_user}: {html}')
 
 
 @client.event
 async def on_guild_join(guild):
     guild_id = guild.id
-    guild_path = f'data\\{guild.name}-{guild_id}.json'
+    guild_path = f'data\\{guild.name}-{guild_id}.json'.replace(' ',
+                                                               '-').strip()
     print(guild_path)
     print(os.path.exists(guild_path))
     if not os.path.exists(guild_path):
@@ -50,6 +51,9 @@ async def on_guild_join(guild):
                       sort_keys=True,
                       indent=4,
                       separators=(',', ': '))
+        repo_create_file(
+            REPO_NAME,
+            f'{guild.name}-{guild_id}.json'.replace(' ', '-').strip(), post)
     else:
         json.load(open(guild_path))
 
@@ -78,7 +82,7 @@ async def admin_delete_trigger(ctx):
         post = {'_id': int(ctx.guild.id)}
         COLLECTION.update_one(post, {'$unset': {trigger: response}})
         del trigger_response[trigger]
-        github_update_file(REPO_NAME, file_name, trigger_response)
+        repo_update_file(REPO_NAME, file_name, trigger_response)
         update_trigger_file(trigger_response, file_name)
         await ctx.send(
             f'{current_user}: "Trigger {trigger}" with response "{response}" was deleted with success'
@@ -87,9 +91,16 @@ async def admin_delete_trigger(ctx):
         await ctx.send(f'{current_user}: {trigger} does not exist!')
 
 
-def github_update_file(REPO_NAME, file_name, data):
+def repo_update_file(REPO_NAME, file_name, data):
     bot.githubapi.github_file_update(
         REPO_NAME, f'data/{file_name}', f"update data in file {file_name}",
+        json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
+
+
+def repo_create_file(REPO_NAME, file_name, data):
+    bot.githubapi.github_file_update(
+        REPO_NAME, f'data/{file_name}',
+        f"create file {file_name} in data folder",
         json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
 
 
@@ -123,7 +134,7 @@ async def admin_add_trigger(ctx):
         trigger_response[trigger] = response
         post = {'_id': int(ctx.guild.id)}
         update_trigger_file(trigger_response, file_name)
-        github_update_file(REPO_NAME, file_name, trigger_response)
+        repo_update_file(REPO_NAME, file_name, trigger_response)
         COLLECTION.update_one(post, {'$set': {trigger: response}})
 
 

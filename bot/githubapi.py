@@ -15,12 +15,18 @@ def get_repo(name):
 
 
 def github_file_update(
+    #updates a file in the user's repo name
     reponame,
     pathfile,
     update_message,
     data,
 ):
-    #updates a file in the user's repo name
+
     repo = get_repo(reponame)
     sha = repo.get_contents(pathfile).sha
     repo.update_file(pathfile, update_message, data, sha)
+
+
+def github_create_file(reponame, pathfile, msg, data):
+    repo = get_repo(reponame)
+    repo.create_file(pathfile, msg, data)
