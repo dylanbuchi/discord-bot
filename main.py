@@ -52,7 +52,7 @@ async def on_guild_join(guild):
                       sort_keys=True,
                       indent=4,
                       separators=(',', ': '))
-        repo_create_file(REPO_NAME, f'{guild.name}-{guild_id}', post)
+        repo_create_file(REPO_NAME, f'{guild.name}-{guild_id}.json', post)
     else:
         json.load(open(guild_path))
 
