@@ -38,3 +38,9 @@ def get_raw_url(reponame, pathfile):
     dic = repo.get_contents(pathfile).raw_data
     raw_url = dic['download_url']
     return raw_url
+
+
+def github_delete_file(reponame, pathfile, msg):
+    repo = get_repo(reponame)
+    sha = repo.get_contents(pathfile).sha
+    repo.delete_file(pathfile, msg, sha)

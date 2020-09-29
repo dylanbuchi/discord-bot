@@ -3,14 +3,56 @@ import json
 import os
 import re
 import discord
-import bot.githubapi
+import bot.githubapi as gh
 from discord.ext import commands
 from dotenv import load_dotenv
 
 import bot.server_info
+import urllib.request, json
 
 #for client decorator
 client = commands.Bot(command_prefix='?')
+
+
+def get_json_from_url(url_):
+    # get json data from web link
+    with urllib.request.urlopen(url_) as url:
+        data = json.loads(url.read().decode())
+    return data
+
+
+@client.listen()
+async def on_guild_update(before, after):
+    #update when server name changes
+    if before.name != after.name:
+        COLLECTION.delete_one({'_id': int(before.id)})
+        file_name = f'{before.name}-{before.id}.json'
+        url = f'data/{file_name}'
+        html = str(bot.githubapi.get_raw_url(REPO_NAME, url))
+        data = get_json_from_url(html)
+        data['server name'] = after.name
+        COLLECTION.insert_one(data)
+        repo_create_file(f'{after.name}-{after.id}', data)
+        gh.github_delete_file(REPO_NAME,
+                              f'data/{before.name}-{before.id}.json',
+                              f'delete {before.name}-{before.id}.json')
+
+
+@client.event
+async def on_ready():
+    print('Bot Ready')
+
+
+@client.event
+async def on_member_remove(member):
+    await member.guild.system_channel.send(
+        f'**{member}** has left the server :frowning:')
+
+
+@client.event
+async def on_member_join(member):
+    await member.guild.system_channel.send(
+        f'**{member}** has join the server :smile:')
 
 
 def get_auth():
@@ -32,8 +74,6 @@ async def list_json(ctx):
     print(file_name)
     url = f"data/{file_name}"
     html = str(bot.githubapi.get_raw_url(REPO_NAME, url))
-
-    #https://raw.githubusercontent.com/dylanbuchi/discord_bot/master/data/dougg%27s server-759957281671872513.json
     await ctx.send(f'{current_user}: {html}')
 
 
@@ -93,13 +133,13 @@ async def admin_delete_trigger(ctx):
 
 
 def repo_update_file(REPO_NAME, file_name, data, msg='update'):
-    bot.githubapi.github_file_update(
+    gh.github_file_update(
         REPO_NAME, f'data/{file_name}', f"{msg} data in file {file_name}",
         json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
 
 
 def repo_create_file(file_name, data):
-    bot.githubapi.github_create_file(
+    gh.github_create_file(
         REPO_NAME, f'data/{file_name}.json',
         f"create file {file_name} in data folder",
         json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
@@ -142,15 +182,15 @@ async def admin_add_trigger(ctx):
 @client.event
 async def on_message(message):
     # get user message and send him a response based on the dict: trigger_key - response_value
-    file_name = f'{message.guild.name}-{message.guild.id}.json'
 
     if message.author == client.user:
         return
+    file_name = f'{message.guild.name}-{message.guild.id}.json'
     if get_len_file(file_name) > 0:
         trigger_response = load_triggers_file(file_name)
     else:
         trigger_response = {}
-    current_user = message.author
+
     msg = message.content.lower().strip()
     trigger = get_clean_trigger_from(msg, trigger_response)
 
@@ -169,11 +209,6 @@ async def on_member_join(member):
     await member.create_dm()
     await member.dm_channel.send(
         f'Hi {member.name}, welcome to my Discord server!')
-
-
-@client.event
-async def on_ready():
-    print("READY")
 
 
 # check guild members and server name
@@ -229,5 +264,5 @@ if __name__ == "__main__":
 
     REPO_NAME = 'discord_bot'
     client.run(TOKEN)
-
+    client.get_guild()
     CLIENT.close()
