@@ -25,17 +25,27 @@ def get_json_from_url(url_):
 async def on_guild_update(before, after):
     #update when server name changes
     if before.name != after.name:
-        COLLECTION.delete_one({'_id': int(before.id)})
-        file_name = f'{before.name}-{before.id}.json'
-        url = f'data/{file_name}'
-        html = str(bot.githubapi.get_raw_url(REPO_NAME, url))
-        data = get_json_from_url(html)
-        data['server name'] = after.name
-        COLLECTION.insert_one(data)
-        repo_create_file(f'{after.name}-{after.id}', data)
-        gh.github_delete_file(REPO_NAME,
-                              f'data/{before.name}-{before.id}.json',
-                              f'delete {before.name}-{before.id}.json')
+        try:
+            COLLECTION.delete_one({'_id': int(before.id)})
+            file_name = f'{before.name}-{before.id}.json'
+            url = f'data/{file_name}'
+            html = str(bot.githubapi.get_raw_url(REPO_NAME, url))
+            data = get_json_from_url(html)
+            data['server name'] = after.name
+            os.remove(f'data\\{file_name}')
+            gh.github_delete_file(REPO_NAME,
+                                  f'data/{before.name}-{before.id}.json',
+                                  f'delete {before.name}-{before.id}.json')
+        except:
+            print("can't delete")
+        finally:
+            json.dump(data,
+                      open(f'data\\{after.name}-{after.id}.json', 'w'),
+                      sort_keys=True,
+                      indent=4,
+                      separators=(',', ': '))
+            COLLECTION.insert_one(data)
+            repo_create_file(f'{after.name}-{after.id}', data)
 
 
 @client.event
