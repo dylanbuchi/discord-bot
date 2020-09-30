@@ -1,20 +1,22 @@
-import bot.mongodb
 import json
 import os
 import re
 import discord
-import bot.githubapi as gh
+import urllib.request, json
+
 from discord.ext import commands
 from dotenv import load_dotenv
 
+#my modules imports
+import bot.mongodb
 import bot.server_info
-import urllib.request, json
+import bot.github_api as gh
 
-#for client decorator
+#decorator client
 client = commands.Bot(command_prefix='?')
 
 
-def get_json_from_url(url_):
+def get_json_data_from(url_):
     # get json data from web link
     with urllib.request.urlopen(url_) as url:
         data = json.loads(url.read().decode())
@@ -24,33 +26,56 @@ def get_json_from_url(url_):
 @client.listen()
 async def on_guild_update(before, after):
     #update when server name changes
-    if before.name != after.name:
+
+    old_name = before.name
+    new_name = after.name
+    guild_id = after.id
+
+    if old_name != new_name:
         try:
-            COLLECTION.delete_one({'_id': int(before.id)})
-            file_name = f'{before.name}-{before.id}.json'
-            url = f'data/{file_name}'
-            html = str(bot.githubapi.get_raw_url(REPO_NAME, url))
-            data = get_json_from_url(html)
-            data['server name'] = after.name
-            os.remove(f'data\\{file_name}')
-            gh.github_delete_file(REPO_NAME,
-                                  f'data/{before.name}-{before.id}.json',
-                                  f'delete {before.name}-{before.id}.json')
+            # remove old data once from mongodb database filtered by id
+            COLLECTION.delete_one({'_id': guild_id})
+            old_file_name = get_guild_json_file_name(old_name, guild_id)
+            print(old_file_name)
+            path = f'data/{old_file_name}'
+
+            # load old json data file from my github repo
+            url = gh.github_get_raw_url(REPO_NAME, path)
+            data = get_json_data_from(url)
+
+            # update old server name to the new one
+            data['server name'] = new_name
+
+            # remove old local file
+            os.remove(f'data\\{old_file_name}')
+            # delete from github repo
+            gh.github_delete_file(REPO_NAME, f'data/{old_file_name}',
+                                  f'delete file: {old_file_name}')
         except:
-            print("can't delete")
+            print("Error can't delete")
         finally:
-            json.dump(data,
-                      open(f'data\\{after.name}-{after.id}.json', 'w'),
-                      sort_keys=True,
-                      indent=4,
-                      separators=(',', ': '))
+            # create a new local file with the new name and dump the json data in it
+            new_file_name = get_guild_json_file_name(new_name, guild_id)
+            json.dump(
+                data,
+                open(f'data\\{new_file_name}', 'w'),
+                sort_keys=True,
+                indent=4,
+            )
+            #insert the data into the database
             COLLECTION.insert_one(data)
-            repo_create_file(f'{after.name}-{after.id}', data)
+
+            # create the new file name in github repository
+            repo_create_file(new_file_name, data)
+
+
+def get_guild_json_file_name(guild_name, guild_id):
+    return f'{guild_name}-{guild_id}.json'
 
 
 @client.event
 async def on_ready():
-    print('Bot Ready')
+    print('Bot is Ready')
 
 
 @client.event
@@ -66,58 +91,59 @@ async def on_member_join(member):
 
 
 def get_auth():
-    #get tokens and auth for the bot
+    #get token for the client
     load_dotenv()
     token = os.getenv('DISCORD_TOKEN')
-    guild = os.getenv('DISCORD_GUILD')
-    return token, guild
+    return token
 
 
-def get_len_file(file_name):
+def get_file_size(file_name):
     return os.path.getsize(f'data\\{file_name}')
 
 
 @client.command(name="list")
-async def list_json(ctx):
-    current_user = ctx.author
-    file_name = f'{ctx.guild.name}-{ctx.guild.id}.json'
-    print(file_name)
-    url = f"data/{file_name}"
-    html = str(bot.githubapi.get_raw_url(REPO_NAME, url))
-    await ctx.send(f'{current_user}: {html}')
+async def list_command(ctx):
+    # list every command the bot has from the server file
+    user = ctx.author
+    path = f'data/{ctx.guild.name}-{ctx.guild.id}.json'
+
+    # get the github file raw url
+    url = gh.github_get_raw_url(REPO_NAME, path)
+    await ctx.send(f'{user}: {url}')
 
 
 @client.event
 async def on_guild_join(guild):
-    guild_id = guild.id
-    guild_path = f'data\\{guild.name}-{guild_id}.json'
-    print(guild_path)
-    print(os.path.exists(guild_path))
-    if not os.path.exists(guild_path):
-        post = {'_id': guild_id, 'server name': guild.name}
-        COLLECTION.insert_one(post)
-        repo_create_file(f'{guild.name}-{guild_id}', post)
-        with open(guild_path, "w") as f:
-            json.dump(post,
-                      open(guild_path, 'w'),
-                      sort_keys=True,
-                      indent=4,
-                      separators=(',', ': '))
+    # when the bot join a server (guild)
+    file_name = get_guild_json_file_name(guild.name, guild.id)
+    guild_path = f'data\\{file_name}'
 
-    else:
-        json.load(open(guild_path))
+    if not os.path.exists(guild_path):
+        data = {'_id': guild.id, '_server name': guild.name}
+        # insert the data to database and create a file in the github repo
+        COLLECTION.insert_one(data)
+        repo_create_file(file_name, data)
+
+        # create local file with the data
+        json.dump(
+            data,
+            open(guild_path, 'w'),
+            sort_keys=True,
+            indent=4,
+        )
 
 
 @client.event
 async def on_guild_remove(guild):
-    print("REMOVED")
+    # when bot get's removed
+    print("Bot has been removed")
 
 
 @client.command(name='delete')
-async def admin_delete_trigger(ctx):
+async def bot_delete_command(ctx):
     # delete an entry (key) trigger and (value) response from the dictionary
     file_name = f'{ctx.guild.name}-{ctx.guild.id}.json'
-    if get_len_file(file_name) > 0:
+    if get_file_size(file_name) > 0:
         trigger_response = load_triggers_file(file_name)
     else:
         trigger_response = {}
@@ -143,7 +169,7 @@ async def admin_delete_trigger(ctx):
 
 
 def repo_update_file(REPO_NAME, file_name, data, msg='update'):
-    gh.github_file_update(
+    gh.github_update_file(
         REPO_NAME, f'data/{file_name}', f"{msg} data in file {file_name}",
         json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
 
@@ -160,7 +186,7 @@ async def admin_add_trigger(ctx):
     # admin to add a trigger, response to the (key) trigger and (value) response dictionary
     current_user = ctx.author
     file_name = f'{ctx.guild.name}-{ctx.guild.id}.json'
-    if get_len_file(file_name) > 0:
+    if get_file_size(file_name) > 0:
         trigger_response = load_triggers_file(file_name)
     else:
         trigger_response = {}
@@ -196,7 +222,7 @@ async def on_message(message):
     if message.author == client.user:
         return
     file_name = f'{message.guild.name}-{message.guild.id}.json'
-    if get_len_file(file_name) > 0:
+    if get_file_size(file_name) > 0:
         trigger_response = load_triggers_file(file_name)
     else:
         trigger_response = {}
@@ -269,7 +295,7 @@ async def get_server_info(ctx):
 
 if __name__ == "__main__":
 
-    TOKEN, GUILD = get_auth()
+    TOKEN = get_auth()
     CLIENT, DB, COLLECTION = bot.mongodb.get_database('triggers')
 
     REPO_NAME = 'discord_bot'
