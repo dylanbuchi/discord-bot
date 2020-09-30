@@ -1,9 +1,9 @@
 import json
 import os
-from os import name
 import re
 import discord
 import urllib.request, json
+import logging
 
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -135,6 +135,8 @@ def get_guild_json_file_name(guild_name, guild_id):
 
 @client.event
 async def on_ready():
+    await client.change_presence(status=discord.Status.online,
+                                 activity=discord.Game('Best Bot Game IV'))
     print('Bot is Ready')
 
 
@@ -361,8 +363,9 @@ if __name__ == "__main__":
 
     TOKEN = get_auth()
     CLIENT, DB, COLLECTION = bot.mongodb.get_database('triggers')
-
     REPO_NAME = 'discord_bot'
+
+    logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
+
     client.run(TOKEN)
-    client.get_guild()
     CLIENT.close()
