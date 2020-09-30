@@ -30,6 +30,7 @@ async def on_guild_update(before, after):
     old_name = before.name
     new_name = after.name
     guild_id = after.id
+    data = {}
 
     if old_name != new_name:
         try:
@@ -66,7 +67,7 @@ async def on_guild_update(before, after):
             COLLECTION.insert_one(data)
 
             # create the new file name in github repository
-            repo_create_file(new_file_name, data)
+            create_file_in_github_repo(new_file_name, data)
 
 
 def get_guild_json_file_name(guild_name, guild_id):
@@ -122,7 +123,7 @@ async def on_guild_join(guild):
         data = {'_id': guild.id, '_server name': guild.name}
         # insert the data to database and create a file in the github repo
         COLLECTION.insert_one(data)
-        repo_create_file(file_name, data)
+        create_file_in_github_repo(file_name, data)
 
         # create local file with the data
         json.dump(
@@ -153,13 +154,16 @@ async def bot_delete_command(ctx):
     trigger = await client.wait_for('message',
                                     check=lambda m: m.author == current_user)
     trigger = trigger.content.lower().strip()
+
     if trigger in trigger_response.keys():
+
         response = trigger_response[trigger]
         post = {'_id': int(ctx.guild.id)}
+        #delete one entry by id from database
         COLLECTION.update_one(post, {'$unset': {trigger: response}})
         del trigger_response[trigger]
         msg = 'delete'
-        repo_update_file(REPO_NAME, file_name, trigger_response, msg)
+        update_file_in_github_repo(REPO_NAME, file_name, trigger_response, msg)
         update_trigger_file(trigger_response, file_name)
         await ctx.send(
             f'{current_user}: "Trigger {trigger}" with response "{response}" was deleted with success'
@@ -168,17 +172,16 @@ async def bot_delete_command(ctx):
         await ctx.send(f'{current_user}: {trigger} does not exist!')
 
 
-def repo_update_file(REPO_NAME, file_name, data, msg='update'):
-    gh.github_update_file(
-        REPO_NAME, f'data/{file_name}', f"{msg} data in file {file_name}",
-        json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
+def update_file_in_github_repo(REPO_NAME, file_name, data, msg='update'):
+    gh.github_update_file(REPO_NAME, f'data/{file_name}',
+                          f"{msg} data in file {file_name}",
+                          json.dumps(data, sort_keys=True, indent=4))
 
 
-def repo_create_file(file_name, data):
-    gh.github_create_file(
-        REPO_NAME, f'data/{file_name}.json',
-        f"create file {file_name} in data folder",
-        json.dumps(data, sort_keys=True, indent=4, separators=(',', ': ')))
+def create_file_in_github_repo(file_name, data):
+    gh.github_create_file(REPO_NAME, f'data/{file_name}',
+                          f"create file {file_name} in data folder",
+                          json.dumps(data, sort_keys=True, indent=4))
 
 
 @client.command(name='add')
@@ -211,17 +214,18 @@ async def admin_add_trigger(ctx):
         trigger_response[trigger] = response
         post = {'_id': int(ctx.guild.id)}
         update_trigger_file(trigger_response, file_name)
-        repo_update_file(REPO_NAME, file_name, trigger_response)
+        update_file_in_github_repo(REPO_NAME, file_name, trigger_response)
         COLLECTION.update_one(post, {'$set': {trigger: response}})
 
 
 @client.event
 async def on_message(message):
     # get user message and send him a response based on the dict: trigger_key - response_value
-
     if message.author == client.user:
         return
+
     file_name = f'{message.guild.name}-{message.guild.id}.json'
+
     if get_file_size(file_name) > 0:
         trigger_response = load_triggers_file(file_name)
     else:
@@ -280,11 +284,12 @@ def get_clean_trigger_from(user_msg, dic):
 def update_trigger_file(dic, trigger_file):
     # rewrite the file when deleting
     trigger_path = f"data\\{trigger_file}"
-    json.dump(dic,
-              open(trigger_path, 'w'),
-              sort_keys=True,
-              indent=4,
-              separators=(',', ': '))
+    json.dump(
+        dic,
+        open(trigger_path, 'w'),
+        sort_keys=True,
+        indent=4,
+    )
 
 
 @client.command(name="server")
