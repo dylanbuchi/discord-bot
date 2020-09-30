@@ -35,6 +35,7 @@ def github_get_raw_url(reponame, pathfile):
     # return raw url link from file
     repo = github_get_repo(reponame)
     temp = repo.get_contents(pathfile).raw_data
+    print(temp)
     raw_url = temp['download_url']
     return raw_url
 

@@ -4,9 +4,13 @@ import re
 import discord
 import urllib.request, json
 import logging
+import pprint
+import bson.json_util
 
+from json2html import *
 from discord.ext import commands
 from dotenv import load_dotenv
+from pymongo import database
 
 #my modules imports
 import bot.mongodb
@@ -15,6 +19,16 @@ import bot.github_api as gh
 
 #decorator client
 client = commands.Bot(command_prefix='?')
+
+
+def get_database_data(collection, filter: dict):
+    """
+    get mongodb database data from a collection name by filter
+    and return it as a JSON str
+    """
+    cursor = collection.find_one(filter)
+    data = bson.json_util.dumps(cursor)
+    return cursor, data
 
 
 @client.command('unban')
@@ -170,8 +184,23 @@ async def list_command(ctx):
     path = f'data/{ctx.guild.name}-{ctx.guild.id}.json'
 
     # get the github file raw url
-    url = gh.github_get_raw_url(REPO_NAME, path)
+    url = gh.github_get_raw_url(REPO_NAME, 'index.html')
+
+    id_filter = {'_id': ctx.guild.id}
+    cursor = get_database_data(COLLECTION, id_filter)
+
+    htmldata = json2html.convert(
+        json=cursor,
+        table_attributes=
+        "id=\"info-table\" class=\"table table-bordered table-hover\"")
+    with open('index.html', 'r+') as f:
+        f.write(f'<h1> Server Name: {ctx.guild.name}</h1>\n' +
+                f'<body>{htmldata}</body>')
     await ctx.send(f'{user}: {url}')
+
+
+def convert_json_to_html(data):
+    pass
 
 
 @client.event
@@ -310,15 +339,6 @@ async def on_member_join(member):
     await member.create_dm()
     await member.dm_channel.send(
         f'Hi {member.name}, welcome to my Discord server!')
-
-
-# check guild members and server name
-# guild = discord.utils.get(client.guilds, name=GUILD)
-# print(f'{client.user} is connected to the following guild:\n'
-#       f'{guild.name}(id: {guild.id})')
-
-# members = '\n - '.join([member.name for member in guild.members])
-# print(f'Guild Members:\n - {members}')
 
 
 def load_triggers_file(trigger_file):
