@@ -30,7 +30,7 @@ async def on_guild_update(before, after):
     old_name = before.name
     new_name = after.name
     guild_id = after.id
-    data = {}
+    data = {'0': after.name}
 
     if old_name != new_name:
         try:
@@ -120,7 +120,7 @@ async def on_guild_join(guild):
     guild_path = f'data\\{file_name}'
 
     if not os.path.exists(guild_path):
-        data = {'_id': guild.id, '_server name': guild.name}
+        data = {'_id': guild.id, 'server name': guild.name}
         # insert the data to database and create a file in the github repo
         COLLECTION.insert_one(data)
         create_file_in_github_repo(file_name, data)
