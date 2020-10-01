@@ -4,6 +4,8 @@ import discord
 import json
 import logging
 import bson.json_util
+import cogs.admin_command
+import cogs.ban
 
 from json2html import *
 from discord.ext import commands
@@ -103,13 +105,6 @@ async def on_member_remove(member):
 async def on_member_join(member):
     await member.guild.system_channel.send(
         f'**{member}** has join the server :smile:')
-
-
-def get_auth():
-    #get token for the client
-    load_dotenv()
-    token = os.getenv('DISCORD_TOKEN_D')
-    return token
 
 
 @client.command(name="list")
@@ -263,6 +258,13 @@ async def on_member_join(member):
 async def get_server_info(ctx):
     # display server info
     await bot.server_info.server_info(ctx)
+
+
+def get_auth():
+    #get token for the client
+    load_dotenv()
+    token = os.getenv('DISCORD_TOKEN_D')
+    return token
 
 
 if __name__ == "__main__":
