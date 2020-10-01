@@ -31,62 +31,58 @@ def get_database_data(collection, filter: dict):
     return cursor, data
 
 
-@client.command('unban')
-async def unban(ctx, *, user):
+# @client.command('unban')
+# async def unban(ctx, *, user):
 
-    try:
-        user = await commands.converter.UserConverter().convert(ctx, user)
-    except:
-        await ctx.send("Error: user could not be found!")
-        return
+#     try:
+#         user = await commands.converter.UserConverter().convert(ctx, user)
+#     except:
+#         await ctx.send("Error: user could not be found!")
+#         return
 
-    try:
-        bans = tuple(ban_entry.user for ban_entry in await ctx.guild.bans())
-        if user in bans:
-            await ctx.guild.unban(user,
-                                  reason="Responsible moderator: " +
-                                  str(ctx.author))
-        else:
-            await ctx.send("User not banned!")
-            return
+#     try:
+#         bans = tuple(ban_entry.user for ban_entry in await ctx.guild.bans())
+#         if user in bans:
+#             await ctx.guild.unban(user,
+#                                   reason="Responsible moderator: " +
+#                                   str(ctx.author))
+#         else:
+#             await ctx.send("User not banned!")
+#             return
 
-    except discord.Forbidden:
-        await ctx.send("I do not have permission to unban!")
-        return
+#     except discord.Forbidden:
+#         await ctx.send("I do not have permission to unban!")
+#         return
 
-    except:
-        await ctx.send("Unbanning failed!")
-        return
+#     except:
+#         await ctx.send("Unbanning failed!")
+#         return
 
-    await ctx.send(f"Successfully unbanned {user.mention}!")
+#     await ctx.send(f"Successfully unbanned {user.mention}!")
 
+# @client.command()
+# @commands.has_permissions(kick_members=True)
+# async def kick(ctx, member: discord.Member, *, reason=None):
+#     await member.kick(reason=reason)
+#     await ctx.send(f'**User {member} was kicked out successfully**')
 
-@client.command()
-@commands.has_permissions(kick_members=True)
-async def kick(ctx, member: discord.Member, *, reason=None):
-    await member.kick(reason=reason)
-    await ctx.send(f'**User {member} was kicked out successfully**')
+# @kick.error
+# async def kick_error(ctx, error):
+#     if isinstance(error, commands.MissingPermissions):
+#         await ctx.send('**Sorry, but you are not allowed to use this command**'
+#                        )
 
+# @client.command()
+# @commands.has_permissions(ban_members=True)
+# async def ban(ctx, member: discord.Member, *, reason=None):
+#     await member.ban(reason=reason)
+#     await ctx.send(f'**User {member} just got banned!**')
 
-@kick.error
-async def kick_error(ctx, error):
-    if isinstance(error, commands.MissingPermissions):
-        await ctx.send('**Sorry, but you are not allowed to use this command**'
-                       )
-
-
-@client.command()
-@commands.has_permissions(ban_members=True)
-async def ban(ctx, member: discord.Member, *, reason=None):
-    await member.ban(reason=reason)
-    await ctx.send(f'**User {member} just got banned!**')
-
-
-@ban.error
-async def ban_error(ctx, error):
-    if isinstance(error, commands.MissingPermissions):
-        await ctx.send('**Sorry, but you are not allowed to use this command**'
-                       )
+# @ban.error
+# async def ban_error(ctx, error):
+#     if isinstance(error, commands.MissingPermissions):
+#         await ctx.send('**Sorry, but you are not allowed to use this command**'
+#                        )
 
 
 def get_json_data_from(url_):
@@ -184,23 +180,12 @@ async def list_command(ctx):
     path = f'data/{ctx.guild.name}-{ctx.guild.id}.json'
 
     # get the github file raw url
-    url = gh.github_get_raw_url(REPO_NAME, 'index.html')
+    url = gh.github_get_raw_url(REPO_NAME, path)
 
-    id_filter = {'_id': ctx.guild.id}
-    cursor = get_database_data(COLLECTION, id_filter)
+    # id_filter = {'_id': ctx.guild.id}
+    # cursor = get_database_data(COLLECTION, id_filter)
 
-    htmldata = json2html.convert(
-        json=cursor,
-        table_attributes=
-        "id=\"info-table\" class=\"table table-bordered table-hover\"")
-    with open('index.html', 'r+') as f:
-        f.write(f'<h1> Server Name: {ctx.guild.name}</h1>\n' +
-                f'<body>{htmldata}</body>')
     await ctx.send(f'{user}: {url}')
-
-
-def convert_json_to_html(data):
-    pass
 
 
 @client.event
@@ -303,6 +288,7 @@ async def admin_add_trigger(ctx):
         )
         trigger_response[trigger] = response
         post = {'_id': int(ctx.guild.id)}
+
         update_trigger_file(trigger_response, file_name)
         update_file_in_github_repo(REPO_NAME, file_name, trigger_response)
         COLLECTION.update_one(post, {'$set': {trigger: response}})
