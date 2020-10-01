@@ -1,10 +1,20 @@
 import github
 import dotenv
 import os
-
+import json
 dotenv.load_dotenv()
 # access token
 mygithub = github.Github(os.getenv('GITHUB_AUTH'))
+
+
+def update_file_in_github_repo(reponame, path, data, msg='update'):
+    github_update_file(reponame, f'{path}', f"{msg} data in file {path}",
+                       json.dumps(data, sort_keys=True, indent=4))
+
+
+def create_file_in_github_repo(reponame, path, data):
+    github_create_file(reponame, f'{path}', f"create file in {path}",
+                       json.dumps(data, sort_keys=True, indent=4))
 
 
 def github_get_repo(name):
@@ -35,7 +45,6 @@ def github_get_raw_url(reponame, pathfile):
     # return raw url link from file
     repo = github_get_repo(reponame)
     temp = repo.get_contents(pathfile).raw_data
-    print(temp)
     raw_url = temp['download_url']
     return raw_url
 
