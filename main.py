@@ -1,43 +1,32 @@
 import json
-import os
-import discord
-import json
 import logging
-import bson.json_util
-import cogs.admin_command
-import cogs.ban
+import os
 
-from json2html import *
+import bson.json_util
+import discord
+
 from discord.ext import commands
 from dotenv import load_dotenv
-from pymongo import database
-from bot.filefunction import get_json_guild_file_name
 
+from json2html import *
+
+from bot import filefunction as botfile
+from bot import github_api as gh
 #my modules imports
-import bot.mongodb
-import bot.server_info
-import bot.github_api as gh
-import bot.filefunction as botfile
+from bot import mongodb
+
+from cogs import auto_responder, server_info
+
+#load .env
+load_dotenv()
+
+#constants
+TOKEN = os.getenv('DISCORD_TOKEN_D')
+REPO_NAME = 'discord_bot'
+DEFAULT_PREFIX = '?'
 
 #decorator client
-
-
-def get_prefix(client, message):
-    prefixes = ['?rep ']
-    return commands.when_mentioned_or(*prefixes)(client, message)
-
-
-client = commands.Bot(command_prefix=get_prefix, case_insensitive=True)
-
-
-def get_database_data(collection, filter: dict):
-    """
-    get mongodb database data from a collection name by filter
-    and return it as a JSON str
-    """
-    cursor = collection.find_one(filter)
-    data = bson.json_util.dumps(cursor)
-    return cursor, data
+client = commands.Bot(command_prefix=DEFAULT_PREFIX, case_insensitive=True)
 
 
 @client.listen()
@@ -107,22 +96,6 @@ async def on_member_join(member):
         f'**{member}** has join the server :smile:')
 
 
-@client.command(name="list")
-async def list_command(ctx):
-    # list every command the bot has from the server file
-    user = ctx.author
-    file_name = get_json_guild_file_name(ctx.guild.name, ctx.guild.id)
-    path = f'data/{file_name}'
-
-    # get the github file raw url
-    url = gh.github_get_raw_url(REPO_NAME, path)
-
-    # id_filter = {'_id': ctx.guild.id}
-    # cursor = get_database_data(COLLECTION, id_filter)
-
-    await ctx.send(f'{user}: {url}')
-
-
 @client.event
 async def on_guild_join(guild):
     # when the bot join a server (guild)
@@ -150,77 +123,6 @@ async def on_guild_remove(guild):
     print("Bot has been removed")
 
 
-@client.command(name='delete')
-async def bot_delete_command(ctx):
-    # delete an entry (key) trigger and (value) response from the dictionary
-    file_name = f'data\\{get_json_guild_file_name(ctx.guild.name, ctx.guild.id)}'
-    if botfile.get_file_size(file_name) > 0:
-        trigger_response = botfile.load_triggers_file(file_name)
-    else:
-        trigger_response = {}
-    current_user = ctx.author
-    await ctx.send(
-        f'{current_user}: Enter the trigger\'s name to delete it\'s entry:')
-    trigger = await client.wait_for('message',
-                                    check=lambda m: m.author == current_user)
-    trigger = trigger.content.lower().strip()
-
-    if trigger in trigger_response.keys():
-
-        response = trigger_response[trigger]
-        post = {'_id': int(ctx.guild.id)}
-        #delete one entry by id from database
-        COLLECTION.update_one(post, {'$unset': {trigger: response}})
-        del trigger_response[trigger]
-        msg = 'delete'
-        gh.update_file_in_github_repo(
-            REPO_NAME, f'data/{ctx.guild.name}-{ctx.guild.id}.json',
-            trigger_response, msg)
-        botfile.update_trigger_file(trigger_response, file_name)
-        await ctx.send(
-            f'{current_user}: "Trigger {trigger}" with response "{response}" was deleted with success'
-        )
-    else:
-        await ctx.send(f'{current_user}: {trigger} does not exist!')
-
-
-@client.command(name='add')
-async def admin_add_trigger(ctx):
-    # admin to add a trigger, response to the (key) trigger and (value) response dictionary
-    current_user = ctx.author
-    file_name = f'data\\{ctx.guild.name}-{ctx.guild.id}.json'
-    if botfile.get_file_size(file_name) > 0:
-        trigger_response = botfile.load_triggers_file(file_name)
-    else:
-        trigger_response = {}
-    await ctx.send(f'{current_user}: Please add a new trigger:')
-
-    trigger = await client.wait_for('message',
-                                    check=lambda m: m.author == current_user)
-    trigger = trigger.content.lower().strip()
-
-    if trigger in trigger_response.keys():
-        await ctx.send(
-            f'{current_user}: The trigger: "{trigger}" already exists!')
-        return
-    else:
-        await ctx.send(f'{current_user}: Now add a response to the trigger:')
-        response = await client.wait_for(
-            'message', check=lambda m: m.author == current_user)
-        response = response.content.lower().strip()
-        await ctx.send(
-            f'{current_user} Trigger: "{trigger}" with response: "{response}" added with success!!'
-        )
-        trigger_response[trigger] = response
-        post = {'_id': int(ctx.guild.id)}
-
-        botfile.update_trigger_file(trigger_response, file_name)
-        gh.update_file_in_github_repo(
-            REPO_NAME, f'data/{ctx.guild.name}-{ctx.guild.id}.json',
-            trigger_response)
-        COLLECTION.update_one(post, {'$set': {trigger: response}})
-
-
 @client.event
 async def on_message(message):
     # get user message and send him a response based on the dict: trigger_key - response_value
@@ -236,7 +138,6 @@ async def on_message(message):
 
     msg = message.content.lower().strip()
     trigger = botfile.get_clean_trigger_from(msg, trigger_response)
-
     if botfile.is_user_trigger_valid(
             msg, trigger_response) or msg in trigger_response.keys():
         await message.channel.send(trigger_response[trigger])
@@ -254,28 +155,16 @@ async def on_member_join(member):
         f'Hi {member.name}, welcome to my Discord server!')
 
 
-@client.command(name="server")
-async def get_server_info(ctx):
-    # display server info
-    await bot.server_info.server_info(ctx)
-
-
-def get_auth():
-    #get token for the client
-    load_dotenv()
-    token = os.getenv('DISCORD_TOKEN_D')
-    return token
+def load_cogs(path):
+    cogs = [i[:-3] for i in os.listdir(path) if i.endswith('.py')]
+    for cog in cogs:
+        client.load_extension(f'cogs.{cog}')
 
 
 if __name__ == "__main__":
-
-    TOKEN = get_auth()
-    CLIENT, DB, COLLECTION = bot.mongodb.get_database('triggers')
-    REPO_NAME = 'discord_bot'
-
+    CLIENT, DB, COLLECTION = mongodb.get_database('triggers')
     logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
 
-    client.load_extension('cogs.admin_command')
-
+    load_cogs('cogs')
     client.run(TOKEN)
     CLIENT.close()
