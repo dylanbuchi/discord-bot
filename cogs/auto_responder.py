@@ -1,4 +1,4 @@
-from bot.mongodb import get_database
+from bot.mongodb import get_database, get_database_data
 from bot.github_api import github_get_raw_url, update_file_in_github_repo
 from bot.filefunction import get_file_size, get_json_guild_file_name, load_triggers_file, update_trigger_file
 from discord.ext import commands
@@ -33,10 +33,14 @@ class AutoResponder(commands.Cog):
         # delete an entry (key) trigger and (value) response from the dictionary
         self.client.unload_extension('cogs.basic')
         file_name = f'data\\{get_json_guild_file_name(ctx.guild.name, ctx.guild.id)}'
-        if get_file_size(file_name) > 0:
-            trigger_response = load_triggers_file(file_name)
-        else:
+
+        collection = get_database('triggers')[2]
+        id_filter = {'_id': ctx.guild.id}
+        cursor, data = get_database_data(collection, id_filter)
+        trigger_response = dict(cursor)
+        if not trigger_response:
             trigger_response = {}
+        print(trigger_response)
         current_user = ctx.author
         await ctx.send(
             f'{current_user}: Enter the trigger\'s name to delete it\'s entry:'
@@ -48,11 +52,10 @@ class AutoResponder(commands.Cog):
 
         if trigger in trigger_response.keys():
 
-            collection = get_database('triggers')[2]
             response = trigger_response[trigger]
             post = {'_id': int(ctx.guild.id)}
             #delete one entry by id from database
-
+            self.client.load_extension('cogs.basic')
             collection.update_one(post, {'$unset': {trigger: response}})
             del trigger_response[trigger]
             msg = 'delete'
@@ -60,7 +63,6 @@ class AutoResponder(commands.Cog):
                 'discord_bot', f'data/{ctx.guild.name}-{ctx.guild.id}.json',
                 trigger_response, msg)
             update_trigger_file(trigger_response, file_name)
-            self.client.load_extension('cogs.basic')
             await ctx.send(
                 f'{current_user}: "Trigger {trigger}" with response "{response}" was deleted with success'
             )
@@ -76,10 +78,15 @@ class AutoResponder(commands.Cog):
         # admin to add a trigger, response to the (key) trigger and (value) response dictionary
         current_user = ctx.author
         file_name = f'data\\{ctx.guild.name}-{ctx.guild.id}.json'
-        if get_file_size(file_name) > 0:
-            trigger_response = load_triggers_file(file_name)
-        else:
+
+        collection = get_database('triggers')[2]
+        id_filter = {'_id': ctx.guild.id}
+        cursor, data = get_database_data(collection, id_filter)
+        trigger_response = dict(cursor)
+        if not trigger_response:
             trigger_response = {}
+            print(trigger_response)
+
         await ctx.send(f'{current_user}: Please add a new trigger:')
 
         trigger = await self.client.wait_for(
@@ -101,7 +108,6 @@ class AutoResponder(commands.Cog):
             )
             trigger_response[trigger] = response
             post = {'_id': int(ctx.guild.id)}
-            collection = get_database('triggers')[2]
             update_trigger_file(trigger_response, file_name)
             update_file_in_github_repo(
                 'discord_bot', f'data/{ctx.guild.name}-{ctx.guild.id}.json',
@@ -111,5 +117,4 @@ class AutoResponder(commands.Cog):
 
 
 def setup(client):
-
     client.add_cog(AutoResponder(client))

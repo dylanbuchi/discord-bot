@@ -1,3 +1,4 @@
+from bot.mongodb import get_database, get_database_data
 import discord
 import bot.filefunction as botfile
 from discord.ext import commands
@@ -13,15 +14,18 @@ class Basic(commands.Cog):
             return
 
         file_name = f'data\\{ctx.guild.name}-{ctx.guild.id}.json'
+        collection = get_database('triggers')[2]
+        id_filter = {'_id': ctx.guild.id}
+        cursor, data = get_database_data(collection, id_filter)
+        trigger_response = dict(cursor)
 
-        if botfile.get_file_size(file_name) > 0:
-            trigger_response = botfile.load_triggers_file(file_name)
-        else:
+        if not trigger_response:
             trigger_response = {}
-
+            print(trigger_response)
         msg = ctx.content.lower().strip()
         if not msg.startswith(self.client.command_prefix):
             trigger = botfile.get_clean_trigger_from(msg, trigger_response)
+
             if botfile.is_user_trigger_valid(
                     msg, trigger_response) or msg in trigger_response.keys():
                 await ctx.channel.send(trigger_response[trigger])

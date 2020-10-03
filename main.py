@@ -168,7 +168,6 @@ if __name__ == "__main__":
     CLIENT, DB, COLLECTION = mongodb.get_database('triggers')
     logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
     load_cogs('cogs')
-    a = client.get_cog('Basic')
-    print(a)
+
     client.run(TOKEN)
     CLIENT.close()
