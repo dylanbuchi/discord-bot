@@ -29,7 +29,7 @@ DEFAULT_PREFIX = '?'
 client = commands.Bot(command_prefix=DEFAULT_PREFIX, case_insensitive=True)
 
 
-@client.event
+@client.eve()
 async def on_guild_update(before, after):
     #update when server name changes
 
@@ -77,15 +77,98 @@ async def on_guild_update(before, after):
             gh.create_file_in_github_repo(REPO_NAME, new_file_name, data)
 
 
+@client.event
+async def on_ready():
+    await client.change_presence(status=discord.Status.online,
+                                 activity=discord.Game('Best Bot Game IV'))
+    print('Bot is Ready')
+
+
+@client.event
+async def on_member_remove(member):
+    await member.guild.system_channel.send(
+        f'**{member}** has left the server :frowning:')
+
+
+@client.event
+async def on_member_join(member):
+    await member.guild.system_channel.send(
+        f'**{member}** has join the server :smile:')
+
+
+@client.event
+async def on_guild_join(guild):
+    # when the bot join a server (guild)
+    file_name = botfile.get_json_guild_file_name(guild.name, guild.id)
+    guild_path = f'data\\{file_name}'
+
+    if not os.path.exists(guild_path):
+        data = {'_id': guild.id, 'server name': guild.name}
+        # insert the data to database and create a file in the github repo
+        COLLECTION.insert_one(data)
+        gh.create_file_in_github_repo(REPO_NAME, f'data/{file_name}', data)
+
+        # create local file with the data
+        json.dump(
+            data,
+            open(guild_path, 'w'),
+            sort_keys=True,
+            indent=4,
+        )
+
+
+@client.event
+async def on_guild_remove(guild):
+    # when bot get's removed
+    print("Bot has been removed")
+
+
+# @client.event
+# async def on_message(message):
+#     pass
+# get user message and send him a response based on the dict: trigger_key - response_value
+# if message.author == client.user:
+#     return
+
+# file_name = f'data\\{message.guild.name}-{message.guild.id}.json'
+
+# if botfile.get_file_size(file_name) > 0:
+#     trigger_response = botfile.load_triggers_file(file_name)
+# else:
+#     trigger_response = {}
+
+# msg = message.content.lower().strip()
+# trigger = botfile.get_clean_trigger_from(msg, trigger_response)
+# if botfile.is_user_trigger_valid(
+#         msg, trigger_response) or msg in trigger_response.keys():
+#     await message.channel.send(trigger_response[trigger])
+
+# elif message.content == 'raise-exception':
+#     raise discord.DiscordException
+# await client.process_commands(message)
+
+
+@client.event
+async def on_member_join(member):
+    # greet people when they join the server
+    await member.create_dm()
+    await member.dm_channel.send(
+        f'Hi {member.name}, welcome to my Discord server!')
+
+
 def load_cogs(path):
     cogs = [i[:-3] for i in os.listdir(path) if i.endswith('.py')]
     for cog in cogs:
+        print(cog)
         client.load_extension(f'cogs.{cog}')
 
 
-CLIENT, DB, COLLECTION = mongodb.get_database('triggers')
-logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
+if __name__ == "__main__":
 
-load_cogs('cogs')
-client.run(TOKEN)
-CLIENT.close()
+    CLIENT, DB, COLLECTION = mongodb.get_database('triggers')
+    logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
+    load_cogs('cogs')
+    a = client.get_cog('Basic')
+    print(a)
+    client.run(TOKEN)
+    CLIENT.close()
