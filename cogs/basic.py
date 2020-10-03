@@ -22,7 +22,6 @@ class Basic(commands.Cog):
         msg = ctx.content.lower().strip()
         if not msg.startswith(self.client.command_prefix):
             trigger = botfile.get_clean_trigger_from(msg, trigger_response)
-
             if botfile.is_user_trigger_valid(
                     msg, trigger_response) or msg in trigger_response.keys():
                 await ctx.channel.send(trigger_response[trigger])

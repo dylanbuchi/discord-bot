@@ -29,7 +29,7 @@ DEFAULT_PREFIX = '?'
 client = commands.Bot(command_prefix=DEFAULT_PREFIX, case_insensitive=True)
 
 
-@client.eve()
+@client.event
 async def on_guild_update(before, after):
     #update when server name changes
 
