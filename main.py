@@ -15,7 +15,7 @@ from bot import github_api as gh
 #my modules imports
 from bot import mongodb
 
-from cogs import auto_responder, server_info
+from cogs import auto_responder, server_info, basic
 
 #load .env
 load_dotenv()
@@ -29,7 +29,7 @@ DEFAULT_PREFIX = '?'
 client = commands.Bot(command_prefix=DEFAULT_PREFIX, case_insensitive=True)
 
 
-@client.listen()
+@client.event
 async def on_guild_update(before, after):
     #update when server name changes
 
@@ -123,28 +123,29 @@ async def on_guild_remove(guild):
     print("Bot has been removed")
 
 
-@client.event
-async def on_message(message):
-    # get user message and send him a response based on the dict: trigger_key - response_value
-    if message.author == client.user:
-        return
+# @client.event
+# async def on_message(message):
+#     pass
+# get user message and send him a response based on the dict: trigger_key - response_value
+# if message.author == client.user:
+#     return
 
-    file_name = f'data\\{message.guild.name}-{message.guild.id}.json'
+# file_name = f'data\\{message.guild.name}-{message.guild.id}.json'
 
-    if botfile.get_file_size(file_name) > 0:
-        trigger_response = botfile.load_triggers_file(file_name)
-    else:
-        trigger_response = {}
+# if botfile.get_file_size(file_name) > 0:
+#     trigger_response = botfile.load_triggers_file(file_name)
+# else:
+#     trigger_response = {}
 
-    msg = message.content.lower().strip()
-    trigger = botfile.get_clean_trigger_from(msg, trigger_response)
-    if botfile.is_user_trigger_valid(
-            msg, trigger_response) or msg in trigger_response.keys():
-        await message.channel.send(trigger_response[trigger])
+# msg = message.content.lower().strip()
+# trigger = botfile.get_clean_trigger_from(msg, trigger_response)
+# if botfile.is_user_trigger_valid(
+#         msg, trigger_response) or msg in trigger_response.keys():
+#     await message.channel.send(trigger_response[trigger])
 
-    elif message.content == 'raise-exception':
-        raise discord.DiscordException
-    await client.process_commands(message)
+# elif message.content == 'raise-exception':
+#     raise discord.DiscordException
+# await client.process_commands(message)
 
 
 @client.event
@@ -158,13 +159,15 @@ async def on_member_join(member):
 def load_cogs(path):
     cogs = [i[:-3] for i in os.listdir(path) if i.endswith('.py')]
     for cog in cogs:
+
         client.load_extension(f'cogs.{cog}')
 
 
 if __name__ == "__main__":
+
     CLIENT, DB, COLLECTION = mongodb.get_database('triggers')
     logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
-
     load_cogs('cogs')
+
     client.run(TOKEN)
     CLIENT.close()
