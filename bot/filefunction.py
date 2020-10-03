@@ -11,8 +11,8 @@ def get_file_size(file_name):
 def get_clean_trigger_from(user_msg, dic):
     # get regex pattern to match everything before and after the trigger
     # and return the clean trigger
-    lst = re.findall(r"(?=(" + '|'.join(dic) + r"))", user_msg)
-    result = ''.join(lst)
+    result = re.findall(r"(?=(" + '|'.join(dic) + r"))", user_msg)[0]
+    print(result)
     return result
 
 
