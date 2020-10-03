@@ -127,31 +127,6 @@ async def on_guild_remove(guild):
     print("Bot has been removed")
 
 
-# @client.event
-# async def on_message(message):
-#     pass
-# get user message and send him a response based on the dict: trigger_key - response_value
-# if message.author == client.user:
-#     return
-
-# file_name = f'data\\{message.guild.name}-{message.guild.id}.json'
-
-# if botfile.get_file_size(file_name) > 0:
-#     trigger_response = botfile.load_triggers_file(file_name)
-# else:
-#     trigger_response = {}
-
-# msg = message.content.lower().strip()
-# trigger = botfile.get_clean_trigger_from(msg, trigger_response)
-# if botfile.is_user_trigger_valid(
-#         msg, trigger_response) or msg in trigger_response.keys():
-#     await message.channel.send(trigger_response[trigger])
-
-# elif message.content == 'raise-exception':
-#     raise discord.DiscordException
-# await client.process_commands(message)
-
-
 @client.event
 async def on_member_join(member):
     # greet people when they join the server

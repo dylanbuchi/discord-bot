@@ -38,7 +38,7 @@ class AutoResponder(commands.Cog):
 
         collection = get_database('triggers')[2]
         id_filter = {'_id': ctx.guild.id}
-        cursor, data = get_database_data(collection, id_filter)
+        cursor = get_database_data(collection, id_filter)
         trigger_response = {}
 
         if cursor:
@@ -84,7 +84,7 @@ class AutoResponder(commands.Cog):
 
         collection = get_database('triggers')[2]
         id_filter = {'_id': ctx.guild.id}
-        cursor, data = get_database_data(collection, id_filter)
+        cursor = get_database_data(collection, id_filter)
 
         trigger_response = {}
 
