@@ -3,13 +3,12 @@ import json
 import logging
 import os
 
-import bson.json_util
+# import bson.json_util
 import discord
 
+# from json2html import *
 from discord.ext import commands
 from dotenv import load_dotenv
-
-from json2html import *
 from pymongo import database
 from pymongo import collection
 

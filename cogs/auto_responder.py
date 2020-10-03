@@ -29,7 +29,9 @@ class AutoResponder(commands.Cog):
         # id_filter = {'_id': ctx.guild.id}
         # cursor = get_database_data(COLLECTION, id_filter)
 
-        await ctx.send(f'{user}: {url}')
+        await ctx.send(
+            f'You can check every **trigger**: **response** at the **link** below (the file takes **~3 minutes** to update):\n{url}'
+        )
 
     @commands.command(name='del',
                       description='delete a (trigger-response) from the list')
@@ -145,7 +147,6 @@ class AutoResponder(commands.Cog):
 
                     collection.update_one(post, {'$set': {trigger: response}})
                     self.client.load_extension(BASIC_COG)
-        self.client.load_extension(BASIC_COG)
 
 
 def setup(client):
