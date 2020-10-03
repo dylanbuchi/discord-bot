@@ -159,7 +159,7 @@ async def on_member_join(member):
 def load_cogs(path):
     cogs = [i[:-3] for i in os.listdir(path) if i.endswith('.py')]
     for cog in cogs:
-        print(cog)
+
         client.load_extension(f'cogs.{cog}')
 
 

@@ -31,7 +31,7 @@ class AutoResponder(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def delete_command(self, ctx):
         # delete an entry (key) trigger and (value) response from the dictionary
-        self.client.unload_extension('cogs.basic')
+
         file_name = f'data\\{get_json_guild_file_name(ctx.guild.name, ctx.guild.id)}'
 
         collection = get_database('triggers')[2]
@@ -42,6 +42,7 @@ class AutoResponder(commands.Cog):
             trigger_response = {}
         print(trigger_response)
         current_user = ctx.author
+        self.client.unload_extension('cogs.basic')
         await ctx.send(
             f'{current_user}: Enter the trigger\'s name to delete it\'s entry:'
         )
@@ -55,7 +56,6 @@ class AutoResponder(commands.Cog):
             response = trigger_response[trigger]
             post = {'_id': int(ctx.guild.id)}
             #delete one entry by id from database
-            self.client.load_extension('cogs.basic')
             collection.update_one(post, {'$unset': {trigger: response}})
             del trigger_response[trigger]
             msg = 'delete'
@@ -96,6 +96,7 @@ class AutoResponder(commands.Cog):
         if trigger in trigger_response.keys():
             await ctx.send(
                 f'{current_user}: The trigger: "{trigger}" already exists!')
+            self.client.load_extension('cogs.basic')
             return
         else:
             await ctx.send(
