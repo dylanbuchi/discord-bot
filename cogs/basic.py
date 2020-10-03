@@ -12,16 +12,15 @@ class Basic(commands.Cog):
     async def on_message(self, ctx):
         if ctx.author == self.client.user:
             return
-
-        file_name = f'data\\{ctx.guild.name}-{ctx.guild.id}.json'
         collection = get_database('triggers')[2]
         id_filter = {'_id': ctx.guild.id}
-        cursor, data = get_database_data(collection, id_filter)
-        trigger_response = dict(cursor)
 
-        if not trigger_response:
-            trigger_response = {}
-            print(trigger_response)
+        cursor, data = get_database_data(collection, id_filter)
+        trigger_response = {}
+
+        if cursor:
+            trigger_response = dict(cursor)
+
         msg = ctx.content.lower().strip()
         if not msg.startswith(self.client.command_prefix):
             trigger = botfile.get_clean_trigger_from(msg, trigger_response)

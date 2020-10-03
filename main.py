@@ -9,6 +9,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 from json2html import *
+from pymongo import database
 
 from bot import filefunction as botfile
 from bot import github_api as gh
@@ -22,7 +23,6 @@ load_dotenv()
 
 #constants
 TOKEN = os.getenv('DISCORD_TOKEN_D')
-REPO_NAME = 'discord_bot'
 DEFAULT_PREFIX = '?'
 
 #decorator client
@@ -44,11 +44,11 @@ async def on_guild_update(before, after):
             COLLECTION.delete_one({'_id': guild_id})
             old_file_name = botfile.get_json_guild_file_name(
                 old_name, guild_id)
-            print(old_file_name)
+
             path = f'data/{old_file_name}'
 
             # load old json data file from my github repo
-            url = gh.github_get_raw_url(REPO_NAME, path)
+            url = gh.github_get_raw_url(path)
             data = botfile.get_json_data_from(url)
 
             # update old server name to the new one
@@ -57,13 +57,13 @@ async def on_guild_update(before, after):
             # remove old local file
             os.remove(f'data\\{old_file_name}')
             # delete from github repo
-            gh.github_delete_file(REPO_NAME, f'data/{old_file_name}',
+            gh.github_delete_file(f'data/{old_file_name}',
                                   f'delete file: {old_file_name}')
         except:
             print("Error can't delete")
         finally:
             # create a new local file with the new name and dump the json data in it
-            new_file_name = f'data/{botfile.get_json_guild_file_name(new_name, guild_id)}'
+            new_file_name = f'{botfile.get_json_guild_file_name(new_name, guild_id)}'
             json.dump(
                 data,
                 open(f'data\\{new_file_name}', 'w'),
@@ -74,7 +74,7 @@ async def on_guild_update(before, after):
             COLLECTION.insert_one(data)
 
             # create the new file name in github repository
-            gh.create_file_in_github_repo(REPO_NAME, new_file_name, data)
+            gh.create_file_in_github_repo(f'data/{new_file_name}', data)
 
 
 @client.event
@@ -103,11 +103,8 @@ async def on_guild_join(guild):
     guild_path = f'data\\{file_name}'
 
     if not os.path.exists(guild_path):
-        data = {'_id': guild.id, 'server name': guild.name}
-        # insert the data to database and create a file in the github repo
-        COLLECTION.insert_one(data)
-        gh.create_file_in_github_repo(REPO_NAME, f'data/{file_name}', data)
 
+        data = {'_id': int(guild.id), 'server name': guild.name}
         # create local file with the data
         json.dump(
             data,
@@ -115,6 +112,13 @@ async def on_guild_join(guild):
             sort_keys=True,
             indent=4,
         )
+        if not COLLECTION.find_one({'_id': int(guild.id)}):
+            # insert the data to database and create a file in the github repo
+            COLLECTION.insert_one(data)
+        try:
+            gh.create_file_in_github_repo(f'data/{file_name}', data)
+        except:
+            print('file exists')
 
 
 @client.event
@@ -167,6 +171,7 @@ if __name__ == "__main__":
 
     CLIENT, DB, COLLECTION = mongodb.get_database('triggers')
     logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
+
     load_cogs('cogs')
 
     client.run(TOKEN)

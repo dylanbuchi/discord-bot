@@ -1,3 +1,4 @@
+import json
 import pymongo
 import pymongo.errors
 import os
@@ -15,8 +16,12 @@ def get_database_data(collection, filter: dict):
     and return it as a JSON str
     """
     cursor = collection.find_one(filter)
-    data = bson.json_util.dumps(cursor)
-    return cursor, data
+    return cursor
+
+
+def load_original_data_to(collection, filter):
+    data = (json.load(open(r'data\original.json', encoding='utf-8')))
+    collection.update_one(filter, {'$set': data})
 
 
 def get_database(collection_name):

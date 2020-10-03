@@ -19,8 +19,10 @@ class AutoResponder(commands.Cog):
         path = f'data/{file_name}'
 
         # get the github file raw url
-        url = github_get_raw_url('discord_bot', path)
-
+        try:
+            url = github_get_raw_url(path)
+        except:
+            print('url not found')
         # id_filter = {'_id': ctx.guild.id}
         # cursor = get_database_data(COLLECTION, id_filter)
 
@@ -37,10 +39,11 @@ class AutoResponder(commands.Cog):
         collection = get_database('triggers')[2]
         id_filter = {'_id': ctx.guild.id}
         cursor, data = get_database_data(collection, id_filter)
-        trigger_response = dict(cursor)
-        if not trigger_response:
-            trigger_response = {}
-        print(trigger_response)
+        trigger_response = {}
+
+        if cursor:
+            trigger_response = dict(cursor)
+
         current_user = ctx.author
         self.client.unload_extension('cogs.basic')
         await ctx.send(
@@ -60,8 +63,8 @@ class AutoResponder(commands.Cog):
             del trigger_response[trigger]
             msg = 'delete'
             update_file_in_github_repo(
-                'discord_bot', f'data/{ctx.guild.name}-{ctx.guild.id}.json',
-                trigger_response, msg)
+                f'data/{ctx.guild.name}-{ctx.guild.id}.json', trigger_response,
+                msg)
             update_trigger_file(trigger_response, file_name)
             await ctx.send(
                 f'{current_user}: "Trigger {trigger}" with response "{response}" was deleted with success'
@@ -82,10 +85,11 @@ class AutoResponder(commands.Cog):
         collection = get_database('triggers')[2]
         id_filter = {'_id': ctx.guild.id}
         cursor, data = get_database_data(collection, id_filter)
-        trigger_response = dict(cursor)
-        if not trigger_response:
-            trigger_response = {}
-            print(trigger_response)
+
+        trigger_response = {}
+
+        if cursor:
+            trigger_response = dict(cursor)
 
         await ctx.send(f'{current_user}: Please add a new trigger:')
 
@@ -111,8 +115,7 @@ class AutoResponder(commands.Cog):
             post = {'_id': int(ctx.guild.id)}
             update_trigger_file(trigger_response, file_name)
             update_file_in_github_repo(
-                'discord_bot', f'data/{ctx.guild.name}-{ctx.guild.id}.json',
-                trigger_response)
+                f'data/{ctx.guild.name}-{ctx.guild.id}.json', trigger_response)
             collection.update_one(post, {'$set': {trigger: response}})
         self.client.load_extension('cogs.basic')
 
