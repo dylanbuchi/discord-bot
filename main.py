@@ -1,3 +1,4 @@
+from asyncio.tasks import FIRST_COMPLETED
 import json
 import logging
 import os
@@ -36,26 +37,24 @@ async def on_guild_update(before, after):
     old_name = before.name
     new_name = after.name
     guild_id = after.id
-    data = {'0': after.name}
+
+    filter_id = {'_id': int(guild_id)}
+    temp_data = mongodb.get_database_data(COLLECTION, filter_id)
 
     if old_name != new_name:
         try:
             # remove old data once from mongodb database filtered by id
             COLLECTION.delete_one({'_id': guild_id})
-            old_file_name = botfile.get_json_guild_file_name(
+            old_file_name = botfile.get_server_data_file_name(
                 old_name, guild_id)
 
-            path = f'data/{old_file_name}'
-
             # load old json data file from my github repo
-            url = gh.github_get_raw_url(path)
-            data = botfile.get_json_data_from(url)
 
             # update old server name to the new one
-            data['server name'] = new_name
-
+            temp_data['server name'] = new_name
+            old_path = botfile.get_absolute_file_path('data', old_file_name)
             # remove old local file
-            os.remove(f'data\\{old_file_name}')
+            os.remove(old_path)
             # delete from github repo
             gh.github_delete_file(f'data/{old_file_name}',
                                   f'delete file: {old_file_name}')
@@ -63,18 +62,23 @@ async def on_guild_update(before, after):
             print("Error can't delete")
         finally:
             # create a new local file with the new name and dump the json data in it
-            new_file_name = f'{botfile.get_json_guild_file_name(new_name, guild_id)}'
+            print(old_file_name)
+            new_file_name = f'{botfile.get_server_data_file_name(new_name, guild_id)}'
+            print(new_file_name)
+            new_path = botfile.get_absolute_file_path('data', new_file_name)
             json.dump(
-                data,
-                open(f'data\\{new_file_name}', 'w'),
+                temp_data,
+                open(new_path, 'w'),
                 sort_keys=True,
                 indent=4,
             )
+
+            sorted_data = json.load(open(new_path))
             #insert the data into the database
-            COLLECTION.insert_one(data)
+            COLLECTION.insert_one(sorted_data)
 
             # create the new file name in github repository
-            gh.create_file_in_github_repo(f'data/{new_file_name}', data)
+            gh.create_file_in_github_repo(f'data/{new_file_name}', temp_data)
 
 
 @client.event
@@ -99,16 +103,16 @@ async def on_member_join(member):
 @client.event
 async def on_guild_join(guild):
     # when the bot join a server (guild)
-    file_name = botfile.get_json_guild_file_name(guild.name, guild.id)
-    guild_path = f'data\\{file_name}'
+    file_name = botfile.get_server_data_file_name(guild.name, guild.id)
+    file_path = botfile.get_absolute_file_path('data', file_name)
 
-    if not os.path.exists(guild_path):
+    if not os.path.exists(file_path):
 
         data = {'_id': int(guild.id), 'server name': guild.name}
         # create local file with the data
         json.dump(
             data,
-            open(guild_path, 'w'),
+            open(file_path, 'w'),
             sort_keys=True,
             indent=4,
         )
@@ -135,19 +139,23 @@ async def on_member_join(member):
         f'Hi {member.name}, welcome to my Discord server!')
 
 
-def load_cogs(path):
+def load_cogs(path, folder):
     cogs = [i[:-3] for i in os.listdir(path) if i.endswith('.py')]
     for cog in cogs:
 
-        client.load_extension(f'cogs.{cog}')
+        client.load_extension(f'{folder}.{cog}')
 
 
 if __name__ == "__main__":
 
-    CLIENT, DB, COLLECTION = mongodb.get_database('triggers')
+    CLIENT, COLLECTION = mongodb.get_database('triggers')
     logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
-
-    load_cogs('cogs')
+    load_cogs(os.path.join(os.getcwd(), 'cogs'), 'cogs')
 
     client.run(TOKEN)
     CLIENT.close()
+
+    # mongodb.load_original_data_to(
+    #     COLLECTION,
+    #     {"_id": 759065854192779294},
+    # )
