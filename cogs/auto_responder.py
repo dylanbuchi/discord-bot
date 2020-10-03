@@ -31,6 +31,7 @@ class AutoResponder(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def delete_command(self, ctx):
         # delete an entry (key) trigger and (value) response from the dictionary
+        self.client.unload_extension('cogs.basic')
         file_name = f'data\\{get_json_guild_file_name(ctx.guild.name, ctx.guild.id)}'
         if get_file_size(file_name) > 0:
             trigger_response = load_triggers_file(file_name)
@@ -40,6 +41,7 @@ class AutoResponder(commands.Cog):
         await ctx.send(
             f'{current_user}: Enter the trigger\'s name to delete it\'s entry:'
         )
+
         trigger = await self.client.wait_for(
             'message', check=lambda m: m.author == current_user)
         trigger = trigger.content.lower().strip()
@@ -58,16 +60,19 @@ class AutoResponder(commands.Cog):
                 'discord_bot', f'data/{ctx.guild.name}-{ctx.guild.id}.json',
                 trigger_response, msg)
             update_trigger_file(trigger_response, file_name)
+            self.client.load_extension('cogs.basic')
             await ctx.send(
                 f'{current_user}: "Trigger {trigger}" with response "{response}" was deleted with success'
             )
         else:
             await ctx.send(f'{current_user}: {trigger} does not exist!')
+        self.client.load_extension('cogs.basic')
 
     @commands.command(name='add',
                       description='add a (trigger-response) to the list')
     @commands.has_permissions(manage_guild=True)
     async def add_command(self, ctx):
+        self.client.unload_extension('cogs.basic')
         # admin to add a trigger, response to the (key) trigger and (value) response dictionary
         current_user = ctx.author
         file_name = f'data\\{ctx.guild.name}-{ctx.guild.id}.json'
@@ -102,6 +107,7 @@ class AutoResponder(commands.Cog):
                 'discord_bot', f'data/{ctx.guild.name}-{ctx.guild.id}.json',
                 trigger_response)
             collection.update_one(post, {'$set': {trigger: response}})
+        self.client.load_extension('cogs.basic')
 
 
 def setup(client):
