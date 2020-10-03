@@ -31,4 +31,4 @@ def get_database(collection_name):
         collection = db[collection_name]
     except [AutoReconnect, BulkWriteError] as error:
         print("Error", error)
-    return client, db, collection
+    return client, collection

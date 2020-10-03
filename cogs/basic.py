@@ -10,9 +10,12 @@ class Basic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, ctx):
+        # listen to every messages that users type
+
         if ctx.author == self.client.user:
             return
-        collection = get_database('triggers')[2]
+
+        collection = get_database('triggers')[1]
         id_filter = {'_id': ctx.guild.id}
 
         cursor = get_database_data(collection, id_filter)
@@ -25,7 +28,7 @@ class Basic(commands.Cog):
         if not msg.startswith(self.client.command_prefix):
             trigger = botfile.get_clean_trigger_from(msg, trigger_response)
 
-            if botfile.is_user_trigger_valid(
+            if botfile.is_user_response_valid(
                     msg, trigger_response) or msg in trigger_response.keys():
                 await ctx.channel.send(trigger_response[trigger])
 

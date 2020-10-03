@@ -6,6 +6,7 @@ dotenv.load_dotenv()
 # access token
 mygithub = github.Github(os.getenv('GITHUB_AUTH'))
 
+# name of the github repository to work on
 REPO_NAME = 'discord_bot'
 
 
