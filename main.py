@@ -164,11 +164,9 @@ if __name__ == "__main__":
 
     logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
     load_cogs(os.path.join(os.getcwd(), 'cogs'), 'cogs')
-
-    client.run(TOKEN)
-    CLIENT.close()
-
     # mongodb.load_original_data_to(
     #     COLLECTION,
     #     {"_id": 759065854192779294},
     # )
+    client.run(TOKEN)
+    CLIENT.close()

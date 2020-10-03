@@ -14,7 +14,7 @@ class AutoResponder(commands.Cog):
         self.client = client
 
     @commands.command(name='list',
-                      description='list every trigger response from the list')
+                      description='List every trigger response from the list')
     @commands.has_permissions(manage_guild=True)
     async def list_command(self, ctx):
         # list every command the bot has from the server file
@@ -35,8 +35,9 @@ class AutoResponder(commands.Cog):
                       description='delete a (trigger-response) from the list')
     @commands.has_permissions(manage_guild=True)
     async def delete_command(self, ctx):
+        self.client.unload_extension(BASIC_COG)
         # delete an entry (key) trigger and (value) response from the dictionary
-        cancel_response = 'command cancelled!'
+        cancel_response = 'command **cancelled!**'
         file_name = get_server_data_file_name(ctx.guild.name, ctx.guild.id)
         path = get_absolute_file_path('data', file_name)
 
@@ -51,9 +52,8 @@ class AutoResponder(commands.Cog):
 
         current_user = ctx.author
 
-        self.client.unload_extension(BASIC_COG)
         await ctx.send(
-            f'{current_user}: Enter the trigger\'s name to delete it\'s entry (Or press "c" to Cancel):'
+            f'Enter the **trigger\'s** name to **delete** it\'s entry (Or type **c** to **Cancel**):'
         )
 
         trigger = await self.client.wait_for(
@@ -79,18 +79,18 @@ class AutoResponder(commands.Cog):
                     trigger_response, msg)
                 update_local_server_file(trigger_response, path)
                 await ctx.send(
-                    f'{current_user}: "Trigger {trigger}" with response "{response}" was deleted with success'
+                    f'**Trigger**: "{trigger}"\n**Response**: "{response}" was **deleted** with success'
                 )
             else:
-                await ctx.send(f'{current_user}: {trigger} does not exist!')
+                await ctx.send(f'**{trigger}** does not exist!')
         self.client.load_extension(BASIC_COG)
 
     @commands.command(name='add',
-                      description='add a (trigger-response) to the list')
+                      description='Add a new (trigger-response) to the list')
     @commands.has_permissions(manage_guild=True)
     async def add_command(self, ctx):
-        cancel_response = 'command cancelled!'
         self.client.unload_extension(BASIC_COG)
+        cancel_response = 'command **cancelled!**'
         # admin to add a trigger, response to the (key) trigger and (value) response dictionary
         current_user = ctx.author
         file_name = get_server_data_file_name(ctx.guild.name, ctx.guild.id)
@@ -106,8 +106,7 @@ class AutoResponder(commands.Cog):
             trigger_response = dict(cursor)
 
         await ctx.send(
-            f'{current_user}: Please add a new trigger: (Or type "c" To Cancel)'
-        )
+            f'**Add** a new **trigger**: (Or type **c** To **Cancel**)')
 
         trigger = await self.client.wait_for(
             'message', check=lambda m: m.author == current_user)
@@ -118,14 +117,12 @@ class AutoResponder(commands.Cog):
             return
         else:
             if trigger in trigger_response.keys():
-                await ctx.send(
-                    f'{current_user}: The trigger: "{trigger}" already exists!'
-                )
+                await ctx.send(f'*Trigger**: "{trigger}" already exists!')
                 self.client.load_extension(BASIC_COG)
                 return
             else:
                 await ctx.send(
-                    f'{current_user}: Now add a response to the trigger: (Or press "c" to Cancel):'
+                    f'**Add** a **response** to the **trigger**: (Or type **c** to **Cancel**):'
                 )
                 response = await self.client.wait_for(
                     'message', check=lambda m: m.author == current_user)
@@ -136,7 +133,7 @@ class AutoResponder(commands.Cog):
                     return
                 else:
                     await ctx.send(
-                        f'{current_user} Trigger: "{trigger}" with response: "{response}" added with success!!'
+                        f'Trigger: "{trigger}"\nResponse: "{response}" added with success!!'
                     )
                     trigger_response[trigger] = response
                     post = {'_id': int(ctx.guild.id)}
@@ -147,7 +144,8 @@ class AutoResponder(commands.Cog):
                     update_local_server_file(trigger_response, path)
 
                     collection.update_one(post, {'$set': {trigger: response}})
-                self.client.load_extension(BASIC_COG)
+                    self.client.load_extension(BASIC_COG)
+        self.client.load_extension(BASIC_COG)
 
 
 def setup(client):
