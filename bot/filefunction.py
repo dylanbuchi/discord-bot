@@ -19,9 +19,10 @@ def get_absolute_file_path(folder: str, filename: str):
 def get_clean_trigger_from(user_msg: str, data: dict):
     # get regex pattern to match everything before and after the trigger
     # and return the clean trigger
-    result = re.findall(r"(?=(" + '|'.join(data) + r"))", user_msg)[0]
-
-    return result
+    result = re.findall(r"(?=(" + '|'.join(data) + r"))", user_msg)
+    if len(result) >= 1:
+        return result[0]
+    return ''
 
 
 def update_local_server_file(data: dict, path: str):

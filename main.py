@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 from json2html import *
 from pymongo import database
+from pymongo import collection
 
 from bot import filefunction as botfile
 from bot import github_api as gh
@@ -149,13 +150,23 @@ def load_cogs(path, folder):
 if __name__ == "__main__":
 
     CLIENT, COLLECTION = mongodb.get_database('triggers')
+    # for f in os.listdir(os.path.join(os.getcwd(), 'data')):
+    #     parts = f.split('-')
+    #     string = '-'.join(parts)
+    #     a = string.split('.')
+    #     name = a[0]
+    #     lst = name.split('-')
+    #     if len(lst) > 1:
+    #         name, id_ = lst[:]
+    #         filter_id = {'_id': id_}
+    #         collection = COLLECTION.find(filter_id)
+    #         COLLECTION.find()
+
     logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
     load_cogs(os.path.join(os.getcwd(), 'cogs'), 'cogs')
-
-    client.run(TOKEN)
-    CLIENT.close()
-
     # mongodb.load_original_data_to(
     #     COLLECTION,
     #     {"_id": 759065854192779294},
     # )
+    client.run(TOKEN)
+    CLIENT.close()
