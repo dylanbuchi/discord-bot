@@ -2,7 +2,7 @@ from bot.filefunction import get_absolute_file_path, get_server_data_file_name, 
 import json
 import logging
 import os
-
+import re
 # import bson.json_util
 import discord
 
@@ -78,25 +78,21 @@ def client_update():
 
     for id in server_ids.values():
         filter_id = {'_id': int(id)}
+
         guildname = client.get_guild(id).name
+
         coll = mongodb.get_database_data(COLLECTION, filter_id)
-        print(coll)
-        print(guildname)
-        print(type(guildname))
+
         if coll:
-            print(coll['server name'])
-            if coll['server name'] != guildname and coll:
-                print('true')
-            temp_data = mongodb.get_database_data(COLLECTION, filter_id)
-            print(temp_data)
-            COLLECTION.delete_one(filter_id)
-            temp_data['server name'] = guildname
-            COLLECTION.insert_one(temp_data)
+            if coll['server name'] != guildname:
+                update_database_data(filter_id, guildname, 'server name')
 
         collections.append(mongodb.get_database_data(COLLECTION, filter_id))
+
     for collection in collections:
         # if not os.path.exists(get_absolute_file_path('data',)) and collection:
         if collection:
+
             server_name, server_id = collection['server name'], collection[
                 '_id']
             filename = get_server_data_file_name(server_name, server_id)
@@ -111,10 +107,22 @@ def client_update():
                           filename,
                       ), 'w'),
                       indent=4)
+            try:
+                gh.create_file_in_github_repo(f'data/{filename}', collection)
+            except:
+                print('file exists')
 
 
 #check local files has the same id if yes delete the older one
     delete_older_duplicate_file(folder)
+
+
+def update_database_data(filter_id, guildname, key):
+
+    temp_data = mongodb.get_database_data(COLLECTION, filter_id)
+    COLLECTION.delete_one(filter_id)
+    temp_data[key] = guildname
+    COLLECTION.insert_one(temp_data)
 
 
 def delete_older_duplicate_file(folder):
@@ -130,27 +138,26 @@ def delete_older_duplicate_file(folder):
         item = only_json[i]
         next_item = only_json[i + 1]
 
-        start = item.find('-') + 1
-        end = item.find('.')
+        # start = item.find('-') + 1
+        # end = item.find('.')
 
-        start_next = next_item.find('-') + 1
-        end_next = next_item.find('.')
+        # start_next = next_item.find('-') + 1
+        # end_next = next_item.find('.')
 
-        id_ = item[start:end]
-        id_next = next_item[start_next:end_next]
+        # id_ = item[start:end]
+        # id_next = next_item[start_next:end_next]
+        id_ = re.search(r'-{1}([\d]+).json', item).group(1)
+        id_next = re.search(r'-{1}([\d]+).json', next_item).group(1)
 
         if id_ == id_next:
             duplicates.append(item)
             duplicates.append(next_item)
-
-    print(duplicates)
 
     for duplicate in duplicates:
         creation_time = os.stat(
             os.path.join(get_absolute_file_path(folder, duplicate))).st_ctime
         stats[duplicate] = creation_time
 
-    print(stats)
     if (len(stats) > 1):
         minimum = min(stats.items(), key=lambda x: x[1])
         os.remove(os.path.join(os.getcwd(), folder, minimum[0]))
@@ -158,7 +165,7 @@ def delete_older_duplicate_file(folder):
 
 @client.event
 async def on_guild_update(before, after):
-    client_update()
+
     old_name = before.name
     new_name = after.name
     guild_id = after.id
@@ -188,9 +195,8 @@ async def on_guild_update(before, after):
             print("Error can't delete")
         finally:
             # create a new local file with the new name and dump the json data in it
-            print(old_file_name)
             new_file_name = f'{botfile.get_server_data_file_name(new_name, guild_id)}'
-            print(new_file_name)
+
             new_path = botfile.get_absolute_file_path('data', new_file_name)
             json.dump(
                 temp_data,
@@ -204,9 +210,13 @@ async def on_guild_update(before, after):
             COLLECTION.insert_one(sorted_data)
 
             # create the new file name in github repository
-            gh.create_file_in_github_repo(f'data/{new_file_name}', temp_data)
-
+            try:
+                gh.create_file_in_github_repo(f'data/{new_file_name}',
+                                              temp_data)
+            except:
+                print('github file exists')
             #update code
+            client_update()
 
 
 @client.event
@@ -288,6 +298,7 @@ async def on_member_join(member):
 @client.event
 async def on_guild_join(guild):
     # when the bot join a server (guild)
+    client_update()
 
     file_name = botfile.get_server_data_file_name(guild.name, guild.id)
     file_path = botfile.get_absolute_file_path('data', file_name)
@@ -305,13 +316,6 @@ async def on_guild_join(guild):
         # insert the data to database and create a file in the github repo
         COLLECTION.insert_one(data)
 
-    try:
-        gh.create_file_in_github_repo(f'data/{file_name}', data)
-
-    except:
-        print('file exists')
-    client_update()
-
 
 @client.event
 async def on_guild_remove(guild):
@@ -319,6 +323,7 @@ async def on_guild_remove(guild):
     filename = get_server_data_file_name(guild.name, guild.id)
     try:
         os.remove(get_absolute_file_path('data', filename))
+        gh.github_delete_file(f'data/{filename}', f'delete file: {filename}')
     except:
         print("can't delete file")
     print("Bot has been removed")
