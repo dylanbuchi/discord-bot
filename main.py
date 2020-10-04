@@ -184,6 +184,8 @@ async def on_guild_join(guild):
 @client.event
 async def on_guild_remove(guild):
     # when bot get's removed
+    filename = get_server_data_file_name(guild.name, guild.id)
+    os.remove(get_absolute_file_path('data', filename))
     print("Bot has been removed")
 
 
