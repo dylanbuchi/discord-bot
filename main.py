@@ -1,4 +1,4 @@
-from asyncio.tasks import FIRST_COMPLETED
+from bot.filefunction import get_absolute_file_path, get_server_data_file_name, update_local_server_file
 import json
 import logging
 import os
@@ -83,9 +83,65 @@ async def on_guild_update(before, after):
 
 @client.event
 async def on_ready():
+    print('Bot is Ready')
     await client.change_presence(status=discord.Status.online,
                                  activity=discord.Game('Best Bot Game IV'))
-    print('Bot is Ready')
+    servers = client.guilds
+    if not servers:
+        print('no server yet')
+        return
+
+    server_ids = {}
+    names = []
+
+    server_id_file = 'clients-server-id.json'
+    folder = 'data'
+    users_file = 'clients-server-name-id.txt'
+
+    if not os.path.exists(users_file):
+        open(f'{get_absolute_file_path(folder, users_file)}', 'w')
+
+    if not os.path.exists(server_id_file):
+        open(f'{get_absolute_file_path(folder, server_id_file)}', 'w')
+
+    for server in servers:
+        name = f'{server.name}-{server.id}'
+        names.append(name)
+        server_ids[server.name] = server.id
+
+    json.dump(
+        server_ids,
+        open(get_absolute_file_path(folder, server_id_file), 'w'),
+        indent=4,
+    )
+
+    with open(f'{get_absolute_file_path(folder, users_file)}', 'w+') as f:
+        for name in names:
+            if name not in f.readlines():
+                f.write(name + '\n')
+
+    collections = []
+
+    for id in server_ids.values():
+        filter_id = {'_id': int(id)}
+        collections.append(mongodb.get_database_data(COLLECTION, filter_id))
+    for collection in collections:
+        # if not os.path.exists(get_absolute_file_path('data',)) and collection:
+        if collection:
+            server_name, server_id = collection['server name'], collection[
+                '_id']
+            filename = get_server_data_file_name(server_name, server_id)
+            if not os.path.exists(get_absolute_file_path(folder, filename)):
+                open(f'{get_absolute_file_path(folder, filename)}', 'w')
+            else:
+                update_local_server_file(
+                    collection, get_absolute_file_path(folder, filename))
+            json.dump(collection,
+                      open(get_absolute_file_path(
+                          folder,
+                          filename,
+                      ), 'w'),
+                      indent=4)
 
 
 @client.event
