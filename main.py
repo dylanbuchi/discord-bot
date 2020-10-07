@@ -87,7 +87,9 @@ def client_update():
             if coll['server name'] != guildname:
                 update_database_data(filter_id, guildname, 'server name')
 
-        collections.append(mongodb.get_database_data(COLLECTION, filter_id))
+            collections.append(mongodb.get_database_data(
+                COLLECTION, filter_id))
+            print(coll['server name'])
 
     for collection in collections:
         # if not os.path.exists(get_absolute_file_path('data',)) and collection:
@@ -111,6 +113,7 @@ def client_update():
                 gh.create_file_in_github_repo(f'data/{filename}', collection)
             except:
                 print('file exists')
+                continue
 
 
 #check local files has the same id if yes delete the older one
@@ -298,8 +301,6 @@ async def on_member_join(member):
 @client.event
 async def on_guild_join(guild):
     # when the bot join a server (guild)
-    client_update()
-
     file_name = botfile.get_server_data_file_name(guild.name, guild.id)
     file_path = botfile.get_absolute_file_path('data', file_name)
     if not os.path.exists(file_path):
@@ -315,6 +316,7 @@ async def on_guild_join(guild):
     if not COLLECTION.find_one({'_id': int(guild.id)}):
         # insert the data to database and create a file in the github repo
         COLLECTION.insert_one(data)
+    client_update()
 
 
 @client.event
