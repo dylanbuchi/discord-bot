@@ -178,48 +178,43 @@ async def on_guild_update(before, after):
 
     # update data when server name changes
     if old_name != new_name:
-        try:
-            # remove old data once from mongodb database filtered by id
-            COLLECTION.delete_one({'_id': guild_id})
-            old_file_name = botfile.get_server_data_file_name(
-                old_name, guild_id)
 
-            # load old json data file from my github repo
+        # remove old data once from mongodb database filtered by id
+        COLLECTION.delete_one({'_id': guild_id})
+        old_file_name = botfile.get_server_data_file_name(old_name, guild_id)
 
-            # update old server name to the new one
-            temp_data['server name'] = new_name
-            old_path = botfile.get_absolute_file_path('data', old_file_name)
-            # remove old local file
-            os.remove(old_path)
-            # delete from github repo
-            gh.github_delete_file(f'data/{old_file_name}',
-                                  f'delete file: {old_file_name}')
-        except:
-            print("Error can't delete")
-        finally:
-            # create a new local file with the new name and dump the json data in it
-            new_file_name = f'{botfile.get_server_data_file_name(new_name, guild_id)}'
+        # load old json data file from my github repo
 
-            new_path = botfile.get_absolute_file_path('data', new_file_name)
-            json.dump(
-                temp_data,
-                open(new_path, 'w'),
-                sort_keys=True,
-                indent=4,
-            )
+        # update old server name to the new one
+        temp_data['server name'] = new_name
+        old_path = botfile.get_absolute_file_path('data', old_file_name)
+        # remove old local file
+        os.remove(old_path)
+        # delete from github repo
+        print(old_file_name)
+        gh.github_delete_file(f'data/{old_file_name}',
+                              f'delete file: {old_file_name}')
 
-            sorted_data = json.load(open(new_path))
-            #insert the data into the database
-            COLLECTION.insert_one(sorted_data)
+        # create a new local file with the new name and dump the json data in it
+        new_file_name = f'{botfile.get_server_data_file_name(new_name, guild_id)}'
 
-            # create the new file name in github repository
-            try:
-                gh.create_file_in_github_repo(f'data/{new_file_name}',
-                                              temp_data)
-            except:
-                print('github file exists')
-            #update code
-            client_update()
+        new_path = botfile.get_absolute_file_path('data', new_file_name)
+        json.dump(
+            temp_data,
+            open(new_path, 'w'),
+            sort_keys=True,
+            indent=4,
+        )
+
+        sorted_data = json.load(open(new_path))
+        #insert the data into the database
+        COLLECTION.insert_one(sorted_data)
+
+        # create the new file name in github repository
+        gh.create_file_in_github_repo(f'data/{new_file_name}', temp_data)
+
+        #update code
+        client_update()
 
 
 @client.event
