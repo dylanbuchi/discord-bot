@@ -1,8 +1,10 @@
+from os import name
+import discord
 from bot.mongodb import get_database, get_database_data
 from bot.github_api import github_get_raw_url, update_file_in_github_repo
 from bot.filefunction import get_absolute_file_path, get_cog_path, get_server_data_file_name, update_local_server_file
 from discord.ext import commands
-
+from main import update_database_data
 #constants
 BASIC_COG = 'cogs.basic'
 
@@ -13,6 +15,81 @@ class AutoResponder(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    @commands.command(name='mod',
+                      description='Update a response from a given trigger')
+    @commands.has_permissions(manage_guild=True)
+    async def update_command(self, ctx):
+
+        cancel_response = 'command **cancelled!**'
+        current_user = ctx.author
+        file_name = get_server_data_file_name(ctx.guild.name, ctx.guild.id)
+        path = get_absolute_file_path('data', file_name)
+
+        collection = get_database('triggers')[1]
+        id_filter = {'_id': ctx.guild.id}
+        cursor = get_database_data(collection, id_filter)
+
+        trigger_response = {}
+
+        if cursor:
+            trigger_response = dict(cursor)
+        self.client.unload_extension(BASIC_COG)
+
+        # string = '\n'.join(f'Trigger= {key} : Response= {value}'
+        #                    for key, value in trigger_response.items()
+        #                    if key != '_id' and key != 'server name')
+        # embed = discord.Embed(title="Trigger's List",
+        #                       color=discord.Color.green())
+        # for key, value in trigger_response.items():
+        #     if key != '_id' and key != 'server name':
+        #         embed.add_field(name=f'Trigger: {key}',
+        #                         value=f'Response: {value}')
+        # responses = [i for i in trigger_response.values()]
+        # triggers_string = '\n'.join(triggers)
+
+        await ctx.send(
+            f'Enter a **trigger** name : (Or type **c** To **Cancel**)\nBelow is the list of your existing'
+            f' **triggers** with their **responses**:')
+        trigger = await self.client.wait_for(
+            'message', check=lambda m: m.author == current_user)
+
+        trigger = trigger.content.lower().strip()
+
+        if trigger == 'c':
+            await ctx.send(cancel_response)
+            self.client.load_extension(BASIC_COG)
+            return
+        elif trigger in trigger_response.keys():
+            await ctx.send(
+                f'The actual **response** of your **trigger** is {trigger_response[trigger]}'
+                f'Enter a new **response** to update the **trigger**: (Or type **c** To **Cancel**)'
+            )
+
+            response = await self.client.wait_for(
+                'message', check=lambda m: m.author == current_user)
+            if response.content.lower().strip() == 'c':
+                await ctx.send(cancel_response)
+                self.client.load_extension(BASIC_COG)
+                return
+            response = response.content.strip()
+            trigger_response[trigger] = response
+
+            update_database_data(filter_id=id_filter,
+                                 value=response,
+                                 key=trigger)
+            update_file_in_github_repo(
+                f'data/{ctx.guild.name}-{ctx.guild.id}.json',
+                trigger_response,
+            )
+            update_local_server_file(trigger_response, path)
+            self.client.load_extension(BASIC_COG)
+            await ctx.send(
+                f'Updated **trigger**: {trigger} with new **response**: {trigger_response[trigger]}'
+            )
+        else:
+            await ctx.send(f'**trigger** name "{trigger}" does not exist')
+            self.client.load_extension(BASIC_COG)
+
     @commands.command(name='list',
                       description='List every trigger response from the list')
     @commands.has_permissions(manage_guild=True)
@@ -20,7 +97,7 @@ class AutoResponder(commands.Cog):
         # list every command the bot has from the server file
         user = ctx.author
         file_name = get_server_data_file_name(ctx.guild.name, ctx.guild.id)
-
+        url = 'none'
         # get the github file raw url
         try:
             url = github_get_raw_url(f'data/{file_name}')
@@ -83,6 +160,7 @@ class AutoResponder(commands.Cog):
                 await ctx.send(
                     f'**Trigger**: "{trigger}"\n**Response**: "{response}" was **deleted** with success'
                 )
+
             else:
                 await ctx.send(f'**{trigger}** does not exist!')
         self.client.load_extension(BASIC_COG)
@@ -91,7 +169,7 @@ class AutoResponder(commands.Cog):
                       description='Add a new (trigger-response) to the list')
     @commands.has_permissions(manage_guild=True)
     async def add_command(self, ctx):
-        self.client.unload_extension(BASIC_COG)
+
         cancel_response = 'command **cancelled!**'
         # admin to add a trigger, response to the (key) trigger and (value) response dictionary
         current_user = ctx.author
@@ -106,7 +184,7 @@ class AutoResponder(commands.Cog):
 
         if cursor:
             trigger_response = dict(cursor)
-
+        self.client.unload_extension(BASIC_COG)
         await ctx.send(
             f'**Add** a new **trigger**: (Or type **c** To **Cancel**)')
 

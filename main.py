@@ -120,11 +120,11 @@ def client_update():
     delete_older_duplicate_file(folder)
 
 
-def update_database_data(filter_id, guildname, key):
+def update_database_data(filter_id, value, key):
 
     temp_data = mongodb.get_database_data(COLLECTION, filter_id)
     COLLECTION.delete_one(filter_id)
-    temp_data[key] = guildname
+    temp_data[key] = value
     COLLECTION.insert_one(temp_data)
 
 
@@ -187,6 +187,7 @@ async def on_guild_update(before, after):
 
         # update old server name to the new one
         temp_data['server name'] = new_name
+
         old_path = botfile.get_absolute_file_path('data', old_file_name)
         # remove old local file
         os.remove(old_path)
@@ -298,9 +299,10 @@ async def on_guild_join(guild):
     # when the bot join a server (guild)
     file_name = botfile.get_server_data_file_name(guild.name, guild.id)
     file_path = botfile.get_absolute_file_path('data', file_name)
+    data = {'_id': int(guild.id), 'server name': guild.name}
+
     if not os.path.exists(file_path):
 
-        data = {'_id': int(guild.id), 'server name': guild.name}
         # create local file with the data
         json.dump(
             data,
@@ -341,25 +343,24 @@ def load_cogs(path, folder):
         client.load_extension(f'{folder}.{cog}')
 
 
-if __name__ == "__main__":
-    CLIENT, COLLECTION = mongodb.get_database('triggers')
-    # for f in os.listdir(os.path.join(os.getcwd(), 'data')):
-    #     parts = f.split('-')
-    #     string = '-'.join(parts)
-    #     a = string.split('.')
-    #     name = a[0]
-    #     lst = name.split('-')
-    #     if len(lst) > 1:
-    #         name, id_ = lst[:]
-    #         filter_id = {'_id': id_}
-    #         collection = COLLECTION.find(filter_id)
-    #         COLLECTION.find()
+CLIENT, COLLECTION = mongodb.get_database('triggers')
+# for f in os.listdir(os.path.join(os.getcwd(), 'data')):
+#     parts = f.split('-')
+#     string = '-'.join(parts)
+#     a = string.split('.')
+#     name = a[0]
+#     lst = name.split('-')
+#     if len(lst) > 1:
+#         name, id_ = lst[:]
+#         filter_id = {'_id': id_}
+#         collection = COLLECTION.find(filter_id)
+#         COLLECTION.find()
 
-    logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
-    load_cogs(os.path.join(os.getcwd(), 'cogs'), 'cogs')
-    # mongodb.load_original_data_to(
-    #     COLLECTION,
-    #     {"_id": 759065854192779294},
-    # )
-    client.run(TOKEN)
-    CLIENT.close()
+logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
+load_cogs(os.path.join(os.getcwd(), 'cogs'), 'cogs')
+# mongodb.load_original_data_to(
+#     COLLECTION,
+#     {"_id": 759065854192779294},
+# )
+client.run(TOKEN)
+CLIENT.close()

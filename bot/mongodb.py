@@ -25,10 +25,7 @@ def load_original_data_to(collection, filter):
 
 
 def get_database(collection_name):
-    try:
-        client = pymongo.MongoClient(DATABASE_SECRET, port=27017)
-        db = client.dredy_bot
-        collection = db[collection_name]
-    except [AutoReconnect, BulkWriteError] as error:
-        print("Error", error)
+    client = pymongo.MongoClient(DATABASE_SECRET, port=27017)
+    db = client.dredy_bot
+    collection = db[collection_name]
     return client, collection
