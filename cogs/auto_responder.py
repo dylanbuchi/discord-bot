@@ -48,7 +48,7 @@ class AutoResponder(commands.Cog):
 
         if trigger == 'c':
             embed.clear_fields()
-            embed.add_field(name='Canceled!', value=cancel_response)
+            embed.add_field(name='Cancelled!', value=cancel_response)
             await ctx.send(embed=embed)
             self.client.load_extension(BASIC_COG)
             return
@@ -64,7 +64,7 @@ class AutoResponder(commands.Cog):
                 'message', check=lambda m: m.author == current_user)
             if response.content.lower().strip() == 'c':
                 embed.clear_fields()
-                embed.add_field(name='Canceled!', value=cancel_response)
+                embed.add_field(name='Cancelled!', value=cancel_response)
                 await ctx.send(embed=embed)
                 self.client.load_extension(BASIC_COG)
                 return
@@ -144,7 +144,7 @@ class AutoResponder(commands.Cog):
         trigger = trigger.content.lower().strip()
         if (trigger == 'c'):
             embed.clear_fields()
-            embed.add_field(name='Canceled!', value=cancel_response)
+            embed.add_field(name='Cancelled!', value=cancel_response)
             await ctx.send(embed=embed)
             self.client.load_extension(BASIC_COG)
             return
@@ -206,7 +206,7 @@ class AutoResponder(commands.Cog):
         trigger = trigger.content.lower().strip()
         if (trigger == 'c'):
             embed.clear_fields()
-            embed.add_field(name='Canceled!', value=cancel_response)
+            embed.add_field(name='Cancelled!', value=cancel_response)
             await ctx.send(embed=embed)
             self.client.load_extension(BASIC_COG)
             return
@@ -230,7 +230,7 @@ class AutoResponder(commands.Cog):
                 response = response.content.lower().strip()
                 if (response == 'c'):
                     embed.clear_fields()
-                    embed.add_field(name='Canceled!', value=cancel_response)
+                    embed.add_field(name='Cancelled!', value=cancel_response)
                     await ctx.send(embed=embed)
                     self.client.load_extension(BASIC_COG)
                     return
