@@ -35,21 +35,8 @@ class AutoResponder(commands.Cog):
             trigger_response = dict(cursor)
         self.client.unload_extension(BASIC_COG)
 
-        # string = '\n'.join(f'Trigger= {key} : Response= {value}'
-        #                    for key, value in trigger_response.items()
-        #                    if key != '_id' and key != 'server name')
-        # embed = discord.Embed(title="Trigger's List",
-        #                       color=discord.Color.green())
-        # for key, value in trigger_response.items():
-        #     if key != '_id' and key != 'server name':
-        #         embed.add_field(name=f'Trigger: {key}',
-        #                         value=f'Response: {value}')
-        # responses = [i for i in trigger_response.values()]
-        # triggers_string = '\n'.join(triggers)
-
         await ctx.send(
-            f'Enter a **trigger** name : (Or type **c** To **Cancel**)\nBelow is the list of your existing'
-            f' **triggers** with their **responses**:')
+            f'Enter a **trigger** name : (Or type **c** To **Cancel**)')
         trigger = await self.client.wait_for(
             'message', check=lambda m: m.author == current_user)
 
@@ -71,6 +58,7 @@ class AutoResponder(commands.Cog):
                 await ctx.send(cancel_response)
                 self.client.load_extension(BASIC_COG)
                 return
+
             response = response.content.strip()
             trigger_response[trigger] = response
 
@@ -103,8 +91,6 @@ class AutoResponder(commands.Cog):
             url = github_get_raw_url(f'data/{file_name}')
         except:
             print('url not found')
-        # id_filter = {'_id': ctx.guild.id}
-        # cursor = get_database_data(COLLECTION, id_filter)
 
         await ctx.send(
             f'You can check every **trigger**: **response** at the **link** below (the file takes **~3 minutes** to update):\n{url}'

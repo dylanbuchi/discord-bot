@@ -69,11 +69,6 @@ def client_update():
         ids = json.load(
             open(get_absolute_file_path('data', 'clients-server-id.json')))
 
-    # if client.id in ids.values():
-    #     print('id in database')
-    #     filter_id = {'_id': guild.id}
-    #
-    #update data from database if the id exist
     collections = []
 
     for id in server_ids.values():
@@ -92,7 +87,7 @@ def client_update():
             print(coll['server name'])
 
     for collection in collections:
-        # if not os.path.exists(get_absolute_file_path('data',)) and collection:
+
         if collection:
 
             server_name, server_id = collection['server name'], collection[
@@ -114,9 +109,7 @@ def client_update():
             except:
                 print('file exists')
                 continue
-
-
-#check local files has the same id if yes delete the older one
+    #check local files has the same id if yes delete the older one
     delete_older_duplicate_file(folder)
 
 
@@ -141,14 +134,6 @@ def delete_older_duplicate_file(folder):
         item = only_json[i]
         next_item = only_json[i + 1]
 
-        # start = item.find('-') + 1
-        # end = item.find('.')
-
-        # start_next = next_item.find('-') + 1
-        # end_next = next_item.find('.')
-
-        # id_ = item[start:end]
-        # id_next = next_item[start_next:end_next]
         id_ = re.search(r'-{1}([\d]+).json', item).group(1)
         id_next = re.search(r'-{1}([\d]+).json', next_item).group(1)
 
@@ -224,62 +209,6 @@ async def on_ready():
     await client.change_presence(status=discord.Status.online,
                                  activity=discord.Game('Best Bot Game IV'))
     client_update()
-    # servers = client.guilds
-    # if not servers:
-    #     print('no server yet')
-    #     return
-
-    # server_ids = {}
-    # names = []
-
-    # server_id_file = 'clients-server-id.json'
-    # folder = 'data'
-    # users_file = 'clients-server-name-id.txt'
-
-    # if not os.path.exists(users_file):
-    #     open(f'{get_absolute_file_path(folder, users_file)}', 'w')
-
-    # if not os.path.exists(server_id_file):
-    #     open(f'{get_absolute_file_path(folder, server_id_file)}', 'w')
-
-    # for server in servers:
-    #     name = f'{server.name}-{server.id}'
-    #     names.append(name)
-    #     server_ids[server.name] = server.id
-
-    # json.dump(
-    #     server_ids,
-    #     open(get_absolute_file_path(folder, server_id_file), 'w'),
-    #     indent=4,
-    # )
-
-    # with open(f'{get_absolute_file_path(folder, users_file)}', 'w+') as f:
-    #     for name in names:
-    #         if name not in f.readlines():
-    #             f.write(name + '\n')
-
-    # collections = []
-
-    # for id in server_ids.values():
-    #     filter_id = {'_id': int(id)}
-    #     collections.append(mongodb.get_database_data(COLLECTION, filter_id))
-    # for collection in collections:
-    #     # if not os.path.exists(get_absolute_file_path('data',)) and collection:
-    #     if collection:
-    #         server_name, server_id = collection['server name'], collection[
-    #             '_id']
-    #         filename = get_server_data_file_name(server_name, server_id)
-    #         if not os.path.exists(get_absolute_file_path(folder, filename)):
-    #             open(f'{get_absolute_file_path(folder, filename)}', 'w')
-    #         else:
-    #             update_local_server_file(
-    #                 collection, get_absolute_file_path(folder, filename))
-    #         json.dump(collection,
-    #                   open(get_absolute_file_path(
-    #                       folder,
-    #                       filename,
-    #                   ), 'w'),
-    #                   indent=4)
 
 
 @client.event
@@ -344,23 +273,9 @@ def load_cogs(path, folder):
 
 
 CLIENT, COLLECTION = mongodb.get_database('triggers')
-# for f in os.listdir(os.path.join(os.getcwd(), 'data')):
-#     parts = f.split('-')
-#     string = '-'.join(parts)
-#     a = string.split('.')
-#     name = a[0]
-#     lst = name.split('-')
-#     if len(lst) > 1:
-#         name, id_ = lst[:]
-#         filter_id = {'_id': id_}
-#         collection = COLLECTION.find(filter_id)
-#         COLLECTION.find()
 
 logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
 load_cogs(os.path.join(os.getcwd(), 'cogs'), 'cogs')
-# mongodb.load_original_data_to(
-#     COLLECTION,
-#     {"_id": 759065854192779294},
-# )
+
 client.run(TOKEN)
 CLIENT.close()
