@@ -1,4 +1,5 @@
 from os import name
+from typing import Text
 import discord
 from bot.mongodb import get_database, get_database_data
 from bot.github_api import github_get_raw_url, update_file_in_github_repo
@@ -19,6 +20,9 @@ class AutoResponder(commands.Cog):
                       description='Update a response from a given trigger')
     @commands.has_permissions(manage_guild=True)
     async def update_command(self, ctx):
+        text = f'Enter a **trigger** name : (Or type **c** To **Cancel**)'
+        embed = discord.Embed(colour=discord.Colour.blue())
+        embed.add_field(name="Update", value=text)
 
         cancel_response = 'command **cancelled!**'
         current_user = ctx.author
@@ -35,27 +39,33 @@ class AutoResponder(commands.Cog):
             trigger_response = dict(cursor)
         self.client.unload_extension(BASIC_COG)
 
-        await ctx.send(
-            f'Enter a **trigger** name : (Or type **c** To **Cancel**)')
+        await ctx.send(embed=embed)
+
         trigger = await self.client.wait_for(
             'message', check=lambda m: m.author == current_user)
 
         trigger = trigger.content.lower().strip()
 
         if trigger == 'c':
-            await ctx.send(cancel_response)
+            embed.clear_fields()
+            embed.add_field(name='Canceled!', value=cancel_response)
+            await ctx.send(embed=embed)
             self.client.load_extension(BASIC_COG)
             return
         elif trigger in trigger_response.keys():
-            await ctx.send(
-                f'The actual **response** of your **trigger** is {trigger_response[trigger]}'
-                f'Enter a new **response** to update the **trigger**: (Or type **c** To **Cancel**)'
-            )
+            text = f'''The actual **response** of your **trigger** is "**{trigger_response[trigger]}**"
+            Enter a new **response** to update the **trigger**: (Or type **c** To **Cancel**)'''
+
+            embed = discord.Embed(colour=discord.Colour.blue())
+            embed.add_field(name="Updating Trigger", value=text)
+            await ctx.send(embed=embed)
 
             response = await self.client.wait_for(
                 'message', check=lambda m: m.author == current_user)
             if response.content.lower().strip() == 'c':
-                await ctx.send(cancel_response)
+                embed.clear_fields()
+                embed.add_field(name='Canceled!', value=cancel_response)
+                await ctx.send(embed=embed)
                 self.client.load_extension(BASIC_COG)
                 return
 
@@ -71,11 +81,17 @@ class AutoResponder(commands.Cog):
             )
             update_local_server_file(trigger_response, path)
             self.client.load_extension(BASIC_COG)
-            await ctx.send(
-                f'Updated **trigger**: {trigger} with new **response**: {trigger_response[trigger]}'
-            )
+
+            text = f'Updated **trigger**: "**{trigger}**" with new **response**: "**{trigger_response[trigger]}**"'
+            embed = discord.Embed(colour=discord.Colour.blue())
+            embed.add_field(name='Updated!', value=text)
+            await ctx.send(embed=embed)
         else:
-            await ctx.send(f'**trigger** name "{trigger}" does not exist')
+            embed.clear_fields()
+            embed.add_field(
+                name='Error!',
+                value=f'**trigger** name "{trigger}" does not exist')
+            await ctx.send(embed=embed)
             self.client.load_extension(BASIC_COG)
 
     @commands.command(name='list',
@@ -83,18 +99,18 @@ class AutoResponder(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def list_command(self, ctx):
         # list every command the bot has from the server file
-        user = ctx.author
         file_name = get_server_data_file_name(ctx.guild.name, ctx.guild.id)
-        url = 'none'
         # get the github file raw url
+        embed = discord.Embed(colour=discord.Colour.purple())
+
         try:
             url = github_get_raw_url(f'data/{file_name}')
+            text = f'You can check every **trigger**: **response** at the **link** below (the file takes **~ 3 minutes** to update):\n{url}'
+            embed.add_field(name="List", value=text)
         except:
             print('url not found')
 
-        await ctx.send(
-            f'You can check every **trigger**: **response** at the **link** below (the file takes **~3 minutes** to update):\n{url}'
-        )
+        await ctx.send(embed=embed)
 
     @commands.command(name='del',
                       description='delete a (trigger-response) from the list')
@@ -117,21 +133,23 @@ class AutoResponder(commands.Cog):
 
         current_user = ctx.author
 
-        await ctx.send(
-            f'Enter the **trigger\'s** name to **delete** it\'s entry (Or type **c** to **Cancel**):'
-        )
+        text = f'Enter the **trigger\'s** name to **delete** it\'s entry (Or type **c** to **Cancel**):'
+        embed = discord.Embed(colour=discord.Colour.red())
+        embed.add_field(name="Delete", value=text)
+        await ctx.send(embed=embed)
 
         trigger = await self.client.wait_for(
             'message', check=lambda m: m.author == current_user)
 
         trigger = trigger.content.lower().strip()
         if (trigger == 'c'):
-            await ctx.send(cancel_response)
+            embed.clear_fields()
+            embed.add_field(name='Canceled!', value=cancel_response)
+            await ctx.send(embed=embed)
             self.client.load_extension(BASIC_COG)
             return
         else:
             if trigger in trigger_response.keys():
-
                 response = trigger_response[trigger]
                 post = {'_id': int(ctx.guild.id)}
                 #delete one entry by id from database
@@ -143,12 +161,17 @@ class AutoResponder(commands.Cog):
                     f'data/{ctx.guild.name}-{ctx.guild.id}.json',
                     trigger_response, msg)
                 update_local_server_file(trigger_response, path)
-                await ctx.send(
-                    f'**Trigger**: "{trigger}"\n**Response**: "{response}" was **deleted** with success'
-                )
+
+                text = f'**Trigger**: "{trigger}"\n**Response**: "{response}" was **deleted** with success'
+                embed = discord.Embed(colour=discord.Colour.red())
+                embed.add_field(name="Deleted!", value=text)
+                await ctx.send(embed=embed)
 
             else:
-                await ctx.send(f'**{trigger}** does not exist!')
+                embed.remove_field(0)
+                embed.add_field(name="Error!",
+                                value=f'**{trigger}** does not exist!')
+                await ctx.send(embed=embed)
         self.client.load_extension(BASIC_COG)
 
     @commands.command(name='add',
@@ -170,37 +193,52 @@ class AutoResponder(commands.Cog):
 
         if cursor:
             trigger_response = dict(cursor)
+
         self.client.unload_extension(BASIC_COG)
-        await ctx.send(
-            f'**Add** a new **trigger**: (Or type **c** To **Cancel**)')
+
+        embed = discord.Embed(colour=discord.Colour.green())
+        text = f'**Add** a new **trigger**: (Or type **c** To **Cancel**)'
+        embed.add_field(name="Add", value=text)
+        await ctx.send(embed=embed)
 
         trigger = await self.client.wait_for(
             'message', check=lambda m: m.author == current_user)
         trigger = trigger.content.lower().strip()
         if (trigger == 'c'):
-            await ctx.send(cancel_response)
+            embed.clear_fields()
+            embed.add_field(name='Canceled!', value=cancel_response)
+            await ctx.send(embed=embed)
             self.client.load_extension(BASIC_COG)
             return
         else:
             if trigger in trigger_response.keys():
-                await ctx.send(f'*Trigger**: "{trigger}" already exists!')
+                embed.clear_fields()
+                embed.add_field(
+                    name='Error!',
+                    value=f'*Trigger**: "{trigger}" already exists!')
+                await ctx.send(embed=embed)
                 self.client.load_extension(BASIC_COG)
                 return
             else:
-                await ctx.send(
-                    f'**Add** a **response** to the **trigger**: (Or type **c** to **Cancel**):'
-                )
+                embed = discord.Embed(colour=discord.Colour.green())
+                text = f'**Add** a **response** to the **trigger**: (Or type **c** to **Cancel**):'
+                embed.add_field(name="Adding a Response", value=text)
+                await ctx.send(embed=embed)
+
                 response = await self.client.wait_for(
                     'message', check=lambda m: m.author == current_user)
                 response = response.content.lower().strip()
                 if (response == 'c'):
-                    await ctx.send(cancel_response)
+                    embed.clear_fields()
+                    embed.add_field(name='Canceled!', value=cancel_response)
+                    await ctx.send(embed=embed)
                     self.client.load_extension(BASIC_COG)
                     return
                 else:
-                    await ctx.send(
-                        f'Trigger: "{trigger}"\nResponse: "{response}" added with success!!'
-                    )
+                    embed = discord.Embed(colour=discord.Colour.green())
+                    text = f'Trigger: "{trigger}"\nResponse: "{response}" added with success!!'
+                    embed.add_field(name="Added!", value=text)
+                    await ctx.send(embed=embed)
                     trigger_response[trigger] = response
                     post = {'_id': int(ctx.guild.id)}
 

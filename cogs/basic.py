@@ -30,7 +30,11 @@ class Basic(commands.Cog):
 
             if botfile.is_user_response_valid(
                     msg, trigger_response) or msg in trigger_response.keys():
-                await ctx.channel.send(trigger_response[trigger])
+
+                embed = discord.Embed(colour=discord.Colour.gold())
+                text = trigger_response[trigger]
+                embed.add_field(name=trigger, value=text)
+                await ctx.channel.send(embed=embed)
 
             elif ctx.content == 'raise-exception':
                 raise discord.DiscordException
