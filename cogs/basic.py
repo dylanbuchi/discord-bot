@@ -1,6 +1,7 @@
 from bot.mongodb import get_database, get_database_data
 import discord
 import bot.filefunction as botfile
+import asyncio
 from discord.ext import commands
 
 
@@ -34,8 +35,9 @@ class Basic(commands.Cog):
                 embed = discord.Embed(colour=discord.Colour.gold())
                 text = trigger_response[trigger]
                 embed.add_field(name=trigger, value=text)
-                await ctx.channel.send(embed=embed)
 
+                await ctx.channel.send(embed=embed, delete_after=3)
+                await ctx.delete(delay=3)
             elif ctx.content == 'raise-exception':
                 raise discord.DiscordException
 

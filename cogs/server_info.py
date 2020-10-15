@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 #bot start time
 start_time = time.time()
 
+DELETE_TIME = 3
+
 
 class Server(commands.Cog):
     def __init__(self, client):
@@ -18,7 +20,9 @@ class Server(commands.Cog):
 
         embed = discord.Embed(colour=discord.Colour.green())
         embed.add_field(name="Pong!", value=text)
-        await ctx.send(embed=embed)
+
+        await ctx.send(embed=embed, delete_after=DELETE_TIME)
+        await ctx.message.delete(delay=DELETE_TIME)
 
     @commands.command(name='uptime')
     @commands.has_permissions(manage_guild=True)
@@ -30,9 +34,11 @@ class Server(commands.Cog):
         embed = discord.Embed(colour=discord.Colour.red())
         embed.add_field(name="Uptime", value=text)
         try:
-            await ctx.send(embed=embed)
+            await ctx.send(embed=embed, delete_after=DELETE_TIME)
+            await ctx.message.delete(delay=DELETE_TIME)
         except discord.HTTPException:
             await ctx.send("Current uptime: " + text)
+            await ctx.message.delete(delay=DELETE_TIME)
 
 
 def setup(client):
