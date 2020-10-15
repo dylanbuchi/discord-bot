@@ -1,13 +1,17 @@
-from os import name
-from typing import Text
 import discord
 from bot.mongodb import get_database, get_database_data
 from bot.github_api import github_get_raw_url, update_file_in_github_repo
 from bot.filefunction import get_absolute_file_path, get_cog_path, get_server_data_file_name, update_local_server_file
 from discord.ext import commands
 from main import update_database_data
+from cogs.admin_config import get_delete_time
+
 #constants
+
+#to load unload basic cog
 BASIC_COG = 'cogs.basic'
+
+#time for the bot to delete a message defaut at 600
 
 
 class AutoResponder(commands.Cog):
@@ -23,7 +27,7 @@ class AutoResponder(commands.Cog):
         text = f'Enter a **trigger** name : (Or type **c** To **Cancel**)'
         embed = discord.Embed(colour=discord.Colour.blue())
         embed.add_field(name="Update", value=text)
-
+        print(f'time {get_delete_time()}')
         cancel_response = 'command **cancelled!**'
         current_user = ctx.author
         file_name = get_server_data_file_name(ctx.guild.name, ctx.guild.id)
@@ -39,18 +43,20 @@ class AutoResponder(commands.Cog):
             trigger_response = dict(cursor)
         self.client.unload_extension(BASIC_COG)
 
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, delete_after=get_delete_time())
 
         trigger = await self.client.wait_for(
             'message', check=lambda m: m.author == current_user)
-
+        message = trigger
         trigger = trigger.content.lower().strip()
 
         if trigger == 'c':
+            self.client.load_extension(BASIC_COG)
             embed.clear_fields()
             embed.add_field(name='Cancelled!', value=cancel_response)
-            await ctx.send(embed=embed)
-            self.client.load_extension(BASIC_COG)
+            await ctx.send(embed=embed, delete_after=get_delete_time())
+            await ctx.message.delete(delay=get_delete_time())
+            await message.delete(delay=get_delete_time())
             return
         elif trigger in trigger_response.keys():
             text = f'''The actual **response** of your **trigger** is "**{trigger_response[trigger]}**"
@@ -58,14 +64,14 @@ class AutoResponder(commands.Cog):
 
             embed = discord.Embed(colour=discord.Colour.blue())
             embed.add_field(name="Updating Trigger", value=text)
-            await ctx.send(embed=embed)
+            await ctx.send(embed=embed, delete_after=get_delete_time())
 
             response = await self.client.wait_for(
                 'message', check=lambda m: m.author == current_user)
             if response.content.lower().strip() == 'c':
                 embed.clear_fields()
                 embed.add_field(name='Cancelled!', value=cancel_response)
-                await ctx.send(embed=embed)
+                await ctx.send(embed=embed, delete_after=get_delete_time())
                 self.client.load_extension(BASIC_COG)
                 return
 
@@ -85,13 +91,14 @@ class AutoResponder(commands.Cog):
             text = f'Updated **trigger**: "**{trigger}**" with new **response**: "**{trigger_response[trigger]}**"'
             embed = discord.Embed(colour=discord.Colour.blue())
             embed.add_field(name='Updated!', value=text)
-            await ctx.send(embed=embed)
+            await ctx.send(embed=embed, delete_after=get_delete_time())
         else:
             embed.clear_fields()
             embed.add_field(
                 name='Error!',
                 value=f'**trigger** name "{trigger}" does not exist')
-            await ctx.send(embed=embed)
+            await ctx.send(embed=embed, delete_after=get_delete_time())
+            await ctx.message.delete(delay=get_delete_time())
             self.client.load_extension(BASIC_COG)
 
     @commands.command(name='list',
@@ -109,8 +116,8 @@ class AutoResponder(commands.Cog):
             embed.add_field(name="List", value=text)
         except:
             print('url not found')
-
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, delete_after=get_delete_time())
+        await ctx.message.delete(delay=get_delete_time())
 
     @commands.command(name='del',
                       description='delete a (trigger-response) from the list')
@@ -136,16 +143,22 @@ class AutoResponder(commands.Cog):
         text = f'Enter the **trigger\'s** name to **delete** it\'s entry (Or type **c** to **Cancel**):'
         embed = discord.Embed(colour=discord.Colour.red())
         embed.add_field(name="Delete", value=text)
-        await ctx.send(embed=embed)
+
+        await ctx.send(embed=embed, delete_after=get_delete_time())
+        await ctx.message.delete(delay=get_delete_time())
 
         trigger = await self.client.wait_for(
             'message', check=lambda m: m.author == current_user)
 
+        message = trigger
         trigger = trigger.content.lower().strip()
         if (trigger == 'c'):
             embed.clear_fields()
             embed.add_field(name='Cancelled!', value=cancel_response)
-            await ctx.send(embed=embed)
+            await ctx.send(embed=embed, delete_after=get_delete_time())
+            await ctx.message.delete(delay=get_delete_time())
+            await message.delete(delay=get_delete_time())
+
             self.client.load_extension(BASIC_COG)
             return
         else:
@@ -165,13 +178,17 @@ class AutoResponder(commands.Cog):
                 text = f'**Trigger**: "{trigger}"\n**Response**: "{response}" was **deleted** with success'
                 embed = discord.Embed(colour=discord.Colour.red())
                 embed.add_field(name="Deleted!", value=text)
-                await ctx.send(embed=embed)
 
+                await ctx.send(embed=embed, delete_after=get_delete_time())
+                await ctx.message.delete(delay=get_delete_time())
+                await message.delete(delay=get_delete_time())
             else:
                 embed.remove_field(0)
                 embed.add_field(name="Error!",
                                 value=f'**{trigger}** does not exist!')
-                await ctx.send(embed=embed)
+                await ctx.send(embed=embed, delete_after=get_delete_time())
+                await ctx.message.delete(delay=get_delete_time())
+                await message.delete(delay=get_delete_time())
         self.client.load_extension(BASIC_COG)
 
     @commands.command(name='add',
@@ -194,20 +211,25 @@ class AutoResponder(commands.Cog):
         if cursor:
             trigger_response = dict(cursor)
 
-        self.client.unload_extension(BASIC_COG)
-
         embed = discord.Embed(colour=discord.Colour.green())
         text = f'**Add** a new **trigger**: (Or type **c** To **Cancel**)'
         embed.add_field(name="Add", value=text)
-        await ctx.send(embed=embed)
-
+        await ctx.send(embed=embed, delete_after=get_delete_time())
+        self.client.unload_extension(BASIC_COG)
         trigger = await self.client.wait_for(
             'message', check=lambda m: m.author == current_user)
+
+        message = trigger
         trigger = trigger.content.lower().strip()
+
         if (trigger == 'c'):
             embed.clear_fields()
             embed.add_field(name='Cancelled!', value=cancel_response)
-            await ctx.send(embed=embed)
+
+            await ctx.send(embed=embed, delete_after=get_delete_time())
+            await ctx.message.delete(delay=get_delete_time())
+            await message.delete(delay=get_delete_time())
+
             self.client.load_extension(BASIC_COG)
             return
         else:
@@ -216,29 +238,46 @@ class AutoResponder(commands.Cog):
                 embed.add_field(
                     name='Error!',
                     value=f'*Trigger**: "{trigger}" already exists!')
-                await ctx.send(embed=embed)
+
+                await ctx.send(embed=embed, delete_after=get_delete_time())
+                await ctx.message.delete(delay=get_delete_time())
+                await message.delete(delay=get_delete_time())
+
                 self.client.load_extension(BASIC_COG)
                 return
             else:
                 embed = discord.Embed(colour=discord.Colour.green())
                 text = f'**Add** a **response** to the **trigger**: (Or type **c** to **Cancel**):'
                 embed.add_field(name="Adding a Response", value=text)
-                await ctx.send(embed=embed)
+
+                await ctx.send(embed=embed, delete_after=get_delete_time())
+                await ctx.message.delete(delay=get_delete_time())
+                await message.delete(delay=get_delete_time())
 
                 response = await self.client.wait_for(
                     'message', check=lambda m: m.author == current_user)
+                message = response
                 response = response.content.lower().strip()
+
                 if (response == 'c'):
                     embed.clear_fields()
                     embed.add_field(name='Cancelled!', value=cancel_response)
-                    await ctx.send(embed=embed)
+
+                    await ctx.send(embed=embed, delete_after=get_delete_time())
+                    await ctx.message.delete(delay=get_delete_time())
+                    await message.delete(delay=get_delete_time())
+
                     self.client.load_extension(BASIC_COG)
                     return
                 else:
                     embed = discord.Embed(colour=discord.Colour.green())
                     text = f'Trigger: "{trigger}"\nResponse: "{response}" added with success!!'
                     embed.add_field(name="Added!", value=text)
-                    await ctx.send(embed=embed)
+
+                    await ctx.send(embed=embed, delete_after=get_delete_time())
+                    await ctx.message.delete(delay=get_delete_time())
+                    await message.delete(delay=get_delete_time())
+
                     trigger_response[trigger] = response
                     post = {'_id': int(ctx.guild.id)}
 

@@ -5,13 +5,26 @@ from datetime import datetime, timedelta
 
 #bot start time
 start_time = time.time()
-
 DELETE_TIME = 3
 
 
 class Server(commands.Cog):
     def __init__(self, client):
         self.client = client
+
+    # @commands.command(name='timedel')
+    # async def delete_time(self, ctx):
+    #     global DELETE_TIME
+
+    #     await ctx.send('enter seconds to delete:', delete_after=DELETE_TIME)
+    #     time = await self.client.wait_for(
+    #         'message', check=lambda m: m.author == ctx.author)
+    #     try:
+    #         time = int(time.content.lower().strip())
+    #         DELETE_TIME = time
+    #     except:
+    #         await ctx.send('Error only integers are allowed')
+    #         await ctx.message.delete(delay=DELETE_TIME)
 
     @commands.command(name='ping')
     @commands.has_permissions(manage_guild=True)

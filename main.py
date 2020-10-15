@@ -16,8 +16,7 @@ from bot import filefunction as botfile
 from bot import github_api as gh
 #my modules imports
 from bot import mongodb
-
-from cogs import auto_responder, server_info, basic
+from cogs import auto_responder, server_info, basic, admin_config
 
 #load .env
 load_dotenv()
