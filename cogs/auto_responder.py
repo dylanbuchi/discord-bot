@@ -27,7 +27,7 @@ class AutoResponder(commands.Cog):
         text = f'Enter a **trigger** name : (Or type **c** To **Cancel**)'
         embed = discord.Embed(colour=discord.Colour.blue())
         embed.add_field(name="Update", value=text)
-        print(f'time {get_delete_time()}')
+
         cancel_response = 'command **cancelled!**'
         current_user = ctx.author
         file_name = get_server_data_file_name(ctx.guild.name, ctx.guild.id)

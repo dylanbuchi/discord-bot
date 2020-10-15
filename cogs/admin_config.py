@@ -32,12 +32,15 @@ class AdminConfig(commands.Cog):
             delete_time = time
 
         except:
-            await ctx.send('Error only integers are allowed', delete_after=10)
+            text = 'Please enter only numbers'
+            embed = discord.Embed(colour=discord.Colour.red())
+            embed.add_field(name="Error", value=text)
+            await ctx.send(embed=embed, delete_after=10)
             await ctx.message.delete(delay=10)
-
-        await ctx.send(
-            f'You put {time} seconds delay for me to delete messages',
-            delete_after=10)
+        text = f'You put {time} seconds delay for me to delete messages'
+        embed = discord.Embed(colour=discord.Colour.dark_orange())
+        embed.add_field(name="Timer Updated!", value=text)
+        await ctx.send(embed=embed, delete_after=10)
         await ctx.message.delete(delay=delete_time)
         await message.delete(delay=delete_time)
         return delete_time
