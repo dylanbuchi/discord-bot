@@ -11,8 +11,6 @@ from cogs.admin_config import get_delete_time
 #to load unload basic cog
 BASIC_COG = 'cogs.basic'
 
-#time for the bot to delete a message defaut at 600
-
 
 class AutoResponder(commands.Cog):
 
@@ -24,6 +22,7 @@ class AutoResponder(commands.Cog):
                       description='Update a response from a given trigger')
     @commands.has_permissions(manage_guild=True)
     async def update_command(self, ctx):
+        print(ctx.prefix)
         text = f'Enter a **trigger** name : (Or type **c** To **Cancel**)'
         embed = discord.Embed(colour=discord.Colour.blue())
         embed.add_field(name="Update", value=text)
@@ -64,14 +63,23 @@ class AutoResponder(commands.Cog):
 
             embed = discord.Embed(colour=discord.Colour.blue())
             embed.add_field(name="Updating Trigger", value=text)
+
             await ctx.send(embed=embed, delete_after=get_delete_time())
+            await ctx.message.delete(delay=get_delete_time())
+            await message.delete(delay=get_delete_time())
 
             response = await self.client.wait_for(
                 'message', check=lambda m: m.author == current_user)
+            message = response
+
             if response.content.lower().strip() == 'c':
                 embed.clear_fields()
                 embed.add_field(name='Cancelled!', value=cancel_response)
+
                 await ctx.send(embed=embed, delete_after=get_delete_time())
+                await ctx.message.delete(delay=get_delete_time())
+                await message.delete(delay=get_delete_time())
+
                 self.client.load_extension(BASIC_COG)
                 return
 
@@ -92,6 +100,8 @@ class AutoResponder(commands.Cog):
             embed = discord.Embed(colour=discord.Colour.blue())
             embed.add_field(name='Updated!', value=text)
             await ctx.send(embed=embed, delete_after=get_delete_time())
+            await ctx.message.delete(delay=get_delete_time())
+            await message.delete(delay=get_delete_time())
         else:
             embed.clear_fields()
             embed.add_field(
@@ -99,6 +109,7 @@ class AutoResponder(commands.Cog):
                 value=f'**trigger** name "{trigger}" does not exist')
             await ctx.send(embed=embed, delete_after=get_delete_time())
             await ctx.message.delete(delay=get_delete_time())
+            await message.delete(delay=get_delete_time())
             self.client.load_extension(BASIC_COG)
 
     @commands.command(name='list',
