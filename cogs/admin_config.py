@@ -69,7 +69,7 @@ class AdminConfig(commands.Cog):
 
         cancel_response = 'command **cancelled!**'
 
-        text = f'Your current timer is set to {delete_time} \n Enter the **seconds** delay for me to **delete** messages:'
+        text = f'Your current timer is set to {delete_time} \n Enter the **seconds** delay for me to **delete** messages or **c** to **Cancel**'
         embed = discord.Embed(colour=discord.Colour.dark_orange())
         embed.add_field(name="Delete timer", value=text)
 
@@ -86,19 +86,31 @@ class AdminConfig(commands.Cog):
             await ctx.message.delete(delay=get_delete_time())
             await message.delete(delay=get_delete_time())
             return
+
+        error = 'Please enter only **positive** **integer** numbers '
+        embed = discord.Embed(colour=discord.Colour.red())
+        embed.add_field(name="Error", value=error)
+
         try:
             time = int(time.content.lower().strip())
-            delete_time = time
+
         except:
-            text = 'Please enter only numbers'
-            embed = discord.Embed(colour=discord.Colour.red())
-            embed.add_field(name="Error", value=text)
-            await ctx.send(embed=embed, delete_after=10)
-            await ctx.message.delete(delay=10)
+            await ctx.send(embed=embed, delete_after=delete_time)
+            await ctx.message.delete(delay=delete_time)
+            await message.delete(delay=delete_time)
             return
+        else:
+            if time <= 0:
+                await ctx.send(embed=embed, delete_after=delete_time)
+                await ctx.message.delete(delay=delete_time)
+                await message.delete(delay=delete_time)
+                return
+
+        delete_time = time
         text = f'You put {time} seconds delay for me to delete messages'
         embed = discord.Embed(colour=discord.Colour.dark_orange())
         embed.add_field(name="Timer Updated!", value=text)
+
         await ctx.send(embed=embed, delete_after=10)
         await ctx.message.delete(delay=delete_time)
         await message.delete(delay=delete_time)
