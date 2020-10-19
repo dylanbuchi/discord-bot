@@ -22,7 +22,7 @@ from cogs import auto_responder, server_info, basic, admin_config
 load_dotenv()
 
 #constants
-TOKEN = os.getenv('DISCORD_TOKEN_D')
+TOKEN = os.getenv('DISCORD_TOKEN_M')
 DEFAULT_PREFIX = '?'
 
 #decorator client
