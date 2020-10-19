@@ -1,7 +1,9 @@
 from bot.mongodb import get_database, get_database_data
 import discord
 import bot.filefunction as botfile
+import asyncio
 from discord.ext import commands
+from cogs.admin_config import get_delete_time
 
 
 class Basic(commands.Cog):
@@ -11,6 +13,7 @@ class Basic(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, ctx):
         # listen to every messages that users type
+        delete_time = get_delete_time()
 
         if ctx.author == self.client.user:
             return
@@ -30,8 +33,13 @@ class Basic(commands.Cog):
 
             if botfile.is_user_response_valid(
                     msg, trigger_response) or msg in trigger_response.keys():
-                await ctx.channel.send(trigger_response[trigger])
 
+                embed = discord.Embed(colour=discord.Colour.gold())
+                text = trigger_response[trigger]
+                embed.add_field(name=trigger, value=text)
+
+                await ctx.channel.send(embed=embed, delete_after=delete_time)
+                await ctx.delete(delay=delete_time)
             elif ctx.content == 'raise-exception':
                 raise discord.DiscordException
 
