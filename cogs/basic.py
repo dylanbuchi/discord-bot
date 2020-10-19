@@ -37,9 +37,7 @@ class Basic(commands.Cog):
                 embed = discord.Embed(colour=discord.Colour.gold())
                 text = trigger_response[trigger]
                 embed.add_field(name=trigger, value=text)
-
                 await ctx.channel.send(embed=embed, delete_after=delete_time)
-                await ctx.delete(delay=delete_time)
             elif ctx.content == 'raise-exception':
                 raise discord.DiscordException
 
