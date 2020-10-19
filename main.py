@@ -1,3 +1,5 @@
+from pymongo.collation import Collation
+from bot.mongodb import load_original_data_to
 from bot.filefunction import get_absolute_file_path, get_server_data_file_name, update_local_server_file
 import json
 import logging
@@ -22,7 +24,7 @@ from cogs import auto_responder, server_info, basic, admin_config
 load_dotenv()
 
 #constants
-TOKEN = os.getenv('DISCORD_TOKEN_M')
+TOKEN = os.getenv('DISCORD_TOKEN_D')
 DEFAULT_PREFIX = '?'
 
 #decorator client
@@ -273,7 +275,11 @@ def load_cogs(path, folder):
 CLIENT, COLLECTION = mongodb.get_database('triggers')
 
 logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
+
 load_cogs(os.path.join(os.getcwd(), 'cogs'), 'cogs')
+
+# LOAD ORIGINAL FILE
+# load_original_data_to(COLLECTION, '<FILE_NAME>')
 
 client.run(TOKEN)
 CLIENT.close()

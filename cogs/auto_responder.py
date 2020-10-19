@@ -22,7 +22,7 @@ class AutoResponder(commands.Cog):
                       description='Update a response from a given trigger')
     @commands.has_permissions(manage_guild=True)
     async def update_command(self, ctx):
-        print(ctx.prefix)
+
         text = f'Enter a **trigger** name : (Or type **c** To **Cancel**)'
         embed = discord.Embed(colour=discord.Colour.blue())
         embed.add_field(name="Update", value=text)

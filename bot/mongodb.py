@@ -1,3 +1,4 @@
+from bot.github_api import update_file_in_github_repo
 import json
 import pymongo
 import pymongo.errors
@@ -19,9 +20,17 @@ def get_database_data(collection, filter: dict):
     return cursor
 
 
-def load_original_data_to(collection, filter):
+def load_original_data_to(collection, file_name):
+    # load original file data to the database
     data = (json.load(open(r'data\original.json', encoding='utf-8')))
-    collection.update_one(filter, {'$set': data})
+    file_data = json.load(open(os.path.join(os.getcwd(), 'data', file_name)))
+
+    filter_id = {'_id': file_data['_id']}
+    collection.update_one(filter_id, {'$set': data})
+
+    #UPDATE github file data
+    updated_data = get_database_data(collection, filter_id)
+    update_file_in_github_repo('data/' + file_name, updated_data)
 
 
 def get_database(collection_name):
