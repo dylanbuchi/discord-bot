@@ -28,7 +28,7 @@ class Server(commands.Cog):
 
     @commands.command(name='ping',
                       description='Ping Pong & latency in milliseconds')
-    @commands.has_permissions(manage_guild=True)
+    # @commands.has_permissions(manage_guild=True)
     async def ping_command(self, ctx):
         text = f'🏓 (~{round(self.client.latency, 1)} ms)'
 
@@ -39,7 +39,7 @@ class Server(commands.Cog):
         await ctx.message.delete(delay=get_delete_time())
 
     @commands.command(name='uptime', description='Time since Bot started')
-    @commands.has_permissions(manage_guild=True)
+    # @commands.has_permissions(manage_guild=True)
     async def uptime_command(self, ctx):
         current_time = time.time()
         difference = int(round(current_time - start_time))
