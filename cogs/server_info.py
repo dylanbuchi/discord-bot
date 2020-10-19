@@ -4,6 +4,7 @@ from discord.ext import commands
 from datetime import datetime, timedelta
 from cogs.admin_config import get_delete_time
 #bot start time
+
 start_time = time.time()
 
 
@@ -25,7 +26,8 @@ class Server(commands.Cog):
     #         await ctx.send('Error only integers are allowed')
     #         await ctx.message.delete(delay=DELETE_TIME)
 
-    @commands.command(name='ping')
+    @commands.command(name='ping',
+                      description='Ping Pong & latency in milliseconds')
     @commands.has_permissions(manage_guild=True)
     async def ping_command(self, ctx):
         text = f'🏓 (~{round(self.client.latency, 1)} ms)'
@@ -36,7 +38,7 @@ class Server(commands.Cog):
         await ctx.send(embed=embed, delete_after=get_delete_time())
         await ctx.message.delete(delay=get_delete_time())
 
-    @commands.command(name='uptime')
+    @commands.command(name='uptime', description='Time since Bot started')
     @commands.has_permissions(manage_guild=True)
     async def uptime_command(self, ctx):
         current_time = time.time()

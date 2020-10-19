@@ -83,7 +83,6 @@ def client_update():
 
             collections.append(mongodb.get_database_data(
                 COLLECTION, filter_id))
-            print(coll['server name'])
 
     for collection in collections:
 
@@ -106,7 +105,7 @@ def client_update():
             try:
                 gh.create_file_in_github_repo(f'data/{filename}', collection)
             except:
-                print('file exists')
+                print('File exists')
                 continue
     #check local files has the same id if yes delete the older one
     delete_older_duplicate_file(folder)
@@ -176,7 +175,7 @@ async def on_guild_update(before, after):
         # remove old local file
         os.remove(old_path)
         # delete from github repo
-        print(old_file_name)
+
         gh.github_delete_file(f'data/{old_file_name}',
                               f'delete file: {old_file_name}')
 

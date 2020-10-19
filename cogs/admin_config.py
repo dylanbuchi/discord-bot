@@ -57,7 +57,11 @@ class AdminConfig(commands.Cog):
     #     print(prefix)
     #     return prefix
 
-    @commands.command(name='timer')
+    @commands.command(
+        name='timer',
+        description=
+        'Set a timer in seconds for every messages to be deleted automatically'
+    )
     @commands.has_permissions(manage_guild=True)
     async def delete_time(self, ctx):
 
@@ -85,13 +89,13 @@ class AdminConfig(commands.Cog):
         try:
             time = int(time.content.lower().strip())
             delete_time = time
-
         except:
             text = 'Please enter only numbers'
             embed = discord.Embed(colour=discord.Colour.red())
             embed.add_field(name="Error", value=text)
             await ctx.send(embed=embed, delete_after=10)
             await ctx.message.delete(delay=10)
+            return
         text = f'You put {time} seconds delay for me to delete messages'
         embed = discord.Embed(colour=discord.Colour.dark_orange())
         embed.add_field(name="Timer Updated!", value=text)

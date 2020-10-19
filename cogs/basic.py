@@ -14,7 +14,7 @@ class Basic(commands.Cog):
     async def on_message(self, ctx):
         # listen to every messages that users type
         delete_time = get_delete_time()
-        print(get_delete_time())
+
         if ctx.author == self.client.user:
             return
 
