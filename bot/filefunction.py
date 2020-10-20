@@ -16,13 +16,37 @@ def get_absolute_file_path(folder: str, filename: str):
     return os.path.join(os.getcwd(), folder, filename)
 
 
+def checksUpper(string, trig):
+    r = 'none'
+    if string.lower() == trig.lower():
+        r = ''
+        for i, s in enumerate(trig):
+            if s.isupper() and string[i].islower():
+                r += s.upper()
+            elif s.islower() and string[i].isupper():
+                r += s.lower()
+            else:
+                r = trig
+    print(r)
+    return r
+
+
 def get_clean_trigger_from(user_msg: str, data: dict):
     # get regex pattern to match everything before and after the trigger
     # and return the clean trigger
-    result = re.findall(r"(?=(" + '|'.join(data) + r"))", user_msg)
+
+    result = re.findall(
+        r"(?=(" + '|'.join(dict(
+            (k.lower(), v) for k, v in data.items())) + r"))",
+        user_msg.lower())
     if len(result) >= 1:
-        return result[0]
-    return ''
+        string = result[0]
+        result = ''
+        for k in data.keys():
+            result = checksUpper(string, k)
+            if result != 'none':
+                return result
+    return 'non'
 
 
 def update_local_server_file(data: dict, path: str):
