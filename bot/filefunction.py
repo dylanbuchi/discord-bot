@@ -4,6 +4,20 @@ import urllib
 import os
 
 
+def get_delete_timer(folder, filename, guild_id):
+    # return delete timer for a server from timer.json
+    timers = get_json_data(folder, filename)
+    delete_time = timers.get(str(guild_id), 30)
+    return delete_time
+
+
+def get_json_data(folder, filename):
+    # get json file data from data folder
+    path = get_absolute_file_path(folder, filename)
+    data = json.load(open(path))
+    return data
+
+
 def get_cog_path(folder, filename):
     return os.path.join(os.getcwd(), f'{folder}.{filename}')
 
@@ -17,6 +31,8 @@ def get_absolute_file_path(folder: str, filename: str):
 
 
 def checksUpper(string, trig):
+    # helper method to check original key and m
+    # to make user msg trigger the same as original
     r = 'none'
     if string.lower() == trig.lower():
         r = ''

@@ -1,18 +1,23 @@
+from bot.filefunction import get_absolute_file_path, get_delete_timer, get_json_data
 from discord.ext import commands
 import discord
+import json
+import os
 
 # default timer delete messages delay
-delete_time = 30
 
 # default prefix
 prefix = '?'
 
+#default timer
+delete_time = 60
 
-def get_new_prefix():
-    return prefix
+# def get_new_prefix():
+#     return prefix
 
 
-def get_delete_time():
+# get timer to delete messages
+def get_guild_delete_timer():
     return delete_time
 
 
@@ -65,15 +70,15 @@ class AdminConfig(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def delete_time(self, ctx):
 
-        global delete_time
-
         cancel_response = 'command **cancelled!**'
+        global delete_time
+        delete_time = get_delete_timer('data', 'timer.json', ctx.guild.id)
 
-        text = f'Your current timer is set to {delete_time} \n Enter the **seconds** delay for me to **delete** messages or **c** to **Cancel**'
+        text = f'Your current timer is set to {get_guild_delete_timer()} \n Enter the **seconds** delay for me to **delete** messages or **c** to **Cancel**'
         embed = discord.Embed(colour=discord.Colour.dark_orange())
         embed.add_field(name="Delete timer", value=text)
 
-        await ctx.send(embed=embed, delete_after=15)
+        await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
 
         time = await self.client.wait_for(
             'message', check=lambda m: m.author == ctx.author)
@@ -82,9 +87,9 @@ class AdminConfig(commands.Cog):
             embed.clear_fields()
             embed.add_field(name='Cancelled!', value=cancel_response)
 
-            await ctx.send(embed=embed, delete_after=get_delete_time())
-            await ctx.message.delete(delay=get_delete_time())
-            await message.delete(delay=get_delete_time())
+            await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
+            await ctx.message.delete(delay=get_guild_delete_timer())
+            await message.delete(delay=get_guild_delete_timer())
             return
 
         error = 'Please enter only **positive** **integer** numbers '
@@ -95,25 +100,35 @@ class AdminConfig(commands.Cog):
             time = int(time.content.lower().strip())
 
         except:
-            await ctx.send(embed=embed, delete_after=delete_time)
-            await ctx.message.delete(delay=delete_time)
-            await message.delete(delay=delete_time)
+            await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
+            await ctx.message.delete(delay=get_guild_delete_timer())
+            await message.delete(delay=get_guild_delete_timer())
             return
         else:
             if time <= 0:
-                await ctx.send(embed=embed, delete_after=delete_time)
-                await ctx.message.delete(delay=delete_time)
-                await message.delete(delay=delete_time)
+                await ctx.send(embed=embed,
+                               delete_after=get_guild_delete_timer())
+                await ctx.message.delete(delay=get_guild_delete_timer())
+                await message.delete(delay=get_guild_delete_timer())
                 return
 
         delete_time = time
+        data = get_json_data('data', 'timer.json')
+        guild_id = str(ctx.guild.id)
+        data[guild_id] = get_guild_delete_timer()
+
+        json.dump(data,
+                  open(get_absolute_file_path('data', 'timer.json'), 'w'),
+                  indent=4)
+
         text = f'You put {time} seconds delay for me to delete messages'
         embed = discord.Embed(colour=discord.Colour.dark_orange())
         embed.add_field(name="Timer Updated!", value=text)
 
-        await ctx.send(embed=embed, delete_after=10)
-        await ctx.message.delete(delay=delete_time)
-        await message.delete(delay=delete_time)
+        await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
+        await ctx.message.delete(delay=get_guild_delete_timer())
+        await message.delete(delay=get_guild_delete_timer())
+
         return delete_time
 
 

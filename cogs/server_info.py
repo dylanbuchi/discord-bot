@@ -2,7 +2,7 @@ import discord, datetime, time
 
 from discord.ext import commands
 from datetime import datetime, timedelta
-from cogs.admin_config import get_delete_time
+from cogs.admin_config import get_guild_delete_timer
 #bot start time
 
 start_time = time.time()
@@ -35,8 +35,8 @@ class Server(commands.Cog):
         embed = discord.Embed(colour=discord.Colour.green())
         embed.add_field(name="Pong!", value=text)
 
-        await ctx.send(embed=embed, delete_after=get_delete_time())
-        await ctx.message.delete(delay=get_delete_time())
+        await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
+        await ctx.message.delete(delay=get_guild_delete_timer())
 
     @commands.command(name='uptime', description='Time since Bot started')
     # @commands.has_permissions(manage_guild=True)
@@ -48,11 +48,11 @@ class Server(commands.Cog):
         embed = discord.Embed(colour=discord.Colour.red())
         embed.add_field(name="Uptime", value=text)
         try:
-            await ctx.send(embed=embed, delete_after=get_delete_time())
-            await ctx.message.delete(delay=get_delete_time())
+            await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
+            await ctx.message.delete(delay=get_guild_delete_timer())
         except discord.HTTPException:
             await ctx.send("Current uptime: " + text)
-            await ctx.message.delete(delay=get_delete_time())
+            await ctx.message.delete(delay=get_guild_delete_timer())
 
 
 def setup(client):

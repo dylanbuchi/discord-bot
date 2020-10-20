@@ -1,9 +1,10 @@
+from bot.filefunction import get_json_data
 from bot.mongodb import get_database, get_database_data
 import discord
 import bot.filefunction as botfile
 import asyncio
 from discord.ext import commands
-from cogs.admin_config import get_delete_time
+from cogs.admin_config import get_guild_delete_timer
 
 
 class Basic(commands.Cog):
@@ -12,12 +13,13 @@ class Basic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, ctx):
-        # listen to every messages that users type
-        delete_time = get_delete_time()
-
+        # listen to every messages t    hat us ers type
+        get_guild_delete_timer()
         if ctx.author == self.client.user:
             return
-
+        timers = get_json_data('data', 'timer.json')
+        delete_time = timers.get(str(ctx.guild.id), 30)
+        print(get_guild_delete_timer())
         collection = get_database('triggers')[1]
         id_filter = {'_id': ctx.guild.id}
 
@@ -40,8 +42,8 @@ class Basic(commands.Cog):
 
                     embed = get_embed(name=trigger,
                                       value=trigger_response[trigger])
-                    await ctx.channel.send(embed=embed,
-                                           delete_after=delete_time)
+                    await ctx.channel.send(
+                        embed=embed, delete_after=get_guild_delete_timer())
                 elif ctx.content == 'raise-exception':
                     raise discord.DiscordException
 

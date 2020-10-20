@@ -1,3 +1,5 @@
+from asyncio.events import TimerHandle
+import time
 from bot.mongodb import load_original_data_to
 from bot.filefunction import get_absolute_file_path, get_server_data_file_name, update_local_server_file
 import json
@@ -51,10 +53,30 @@ def client_update():
     if not os.path.exists(server_id_file):
         open(f'{get_absolute_file_path(folder, server_id_file)}', 'w')
 
+    timer = {}
+
     for server in servers:
         name = f'{server.name}-{server.id}'
         names.append(name)
         server_ids[server.name] = server.id
+        timer[server.id] = 30
+
+    if not os.path.exists(get_absolute_file_path('data', 'timer.json')):
+        print('not in')
+        json.dump(timer,
+                  open(os.path.join(os.getcwd(), folder, 'timer.json'), 'w'),
+                  indent=4)
+
+    #update timer for servers
+    updated_timers = json.load(
+        open(get_absolute_file_path('data', 'timer.json')))
+    for server in servers:
+        if str(server.id) not in updated_timers.keys():
+            updated_timers[server.id] = 30
+
+    json.dump(updated_timers,
+              open(os.path.join(os.getcwd(), folder, 'timer.json'), 'w'),
+              indent=4)
 
     json.dump(
         server_ids,
@@ -205,6 +227,7 @@ async def on_guild_update(before, after):
 @client.event
 async def on_ready():
     print('Bot is Ready')
+
     client_update()
 
 

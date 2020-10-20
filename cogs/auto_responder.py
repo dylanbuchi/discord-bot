@@ -4,7 +4,7 @@ from bot.github_api import github_get_raw_url, update_file_in_github_repo
 from bot.filefunction import get_absolute_file_path, get_cog_path, get_server_data_file_name, update_local_server_file
 from discord.ext import commands
 from main import update_database_data
-from cogs.admin_config import get_delete_time
+from cogs.admin_config import get_guild_delete_timer
 from cogs.basic import get_embed
 
 #constants
@@ -44,7 +44,7 @@ class AutoResponder(commands.Cog):
             trigger_response = dict(cursor)
         self.client.unload_extension(BASIC_COG)
 
-        await ctx.send(embed=embed, delete_after=get_delete_time())
+        await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
 
         trigger = await self.client.wait_for(
             'message', check=lambda m: m.author == current_user)
@@ -56,9 +56,9 @@ class AutoResponder(commands.Cog):
             embed = get_embed(name='Cancelled!',
                               value=cancel_response,
                               color=embed_color)
-            await ctx.send(embed=embed, delete_after=get_delete_time())
-            await ctx.message.delete(delay=get_delete_time())
-            await message.delete(delay=get_delete_time())
+            await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
+            await ctx.message.delete(delay=get_guild_delete_timer())
+            await message.delete(delay=get_guild_delete_timer())
             return
         elif trigger in trigger_response.keys():
             text = f'''The actual **response** of your **trigger** is "**{trigger_response[trigger]}**"
@@ -68,9 +68,9 @@ class AutoResponder(commands.Cog):
                               value=text,
                               color=embed_color)
 
-            await ctx.send(embed=embed, delete_after=get_delete_time())
-            await ctx.message.delete(delay=get_delete_time())
-            await message.delete(delay=get_delete_time())
+            await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
+            await ctx.message.delete(delay=get_guild_delete_timer())
+            await message.delete(delay=get_guild_delete_timer())
 
             response = await self.client.wait_for(
                 'message', check=lambda m: m.author == current_user)
@@ -81,9 +81,10 @@ class AutoResponder(commands.Cog):
                                   value=cancel_response,
                                   color=embed_color)
 
-                await ctx.send(embed=embed, delete_after=get_delete_time())
-                await ctx.message.delete(delay=get_delete_time())
-                await message.delete(delay=get_delete_time())
+                await ctx.send(embed=embed,
+                               delete_after=get_guild_delete_timer())
+                await ctx.message.delete(delay=get_guild_delete_timer())
+                await message.delete(delay=get_guild_delete_timer())
 
                 self.client.load_extension(BASIC_COG)
                 return
@@ -104,18 +105,18 @@ class AutoResponder(commands.Cog):
             text = f'Updated **trigger**: "**{trigger}**" with new **response**: "**{trigger_response[trigger]}**"'
             embed = get_embed(name='Updated!', value=text, color=embed_color)
 
-            await ctx.send(embed=embed, delete_after=get_delete_time())
-            await ctx.message.delete(delay=get_delete_time())
-            await message.delete(delay=get_delete_time())
+            await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
+            await ctx.message.delete(delay=get_guild_delete_timer())
+            await message.delete(delay=get_guild_delete_timer())
         else:
             embed = get_embed(
                 name='Error!',
                 value=f'**trigger** name "{trigger}" does not exist',
                 color=discord.Colour.red())
 
-            await ctx.send(embed=embed, delete_after=get_delete_time())
-            await ctx.message.delete(delay=get_delete_time())
-            await message.delete(delay=get_delete_time())
+            await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
+            await ctx.message.delete(delay=get_guild_delete_timer())
+            await message.delete(delay=get_guild_delete_timer())
             self.client.load_extension(BASIC_COG)
 
     @commands.command(name='list',
@@ -134,8 +135,8 @@ class AutoResponder(commands.Cog):
 
         except:
             print('url not found')
-        await ctx.send(embed=embed, delete_after=get_delete_time())
-        await ctx.message.delete(delay=get_delete_time())
+        await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
+        await ctx.message.delete(delay=get_guild_delete_timer())
 
     @commands.command(name='del',
                       description='delete a (trigger-response) from the list')
@@ -162,8 +163,8 @@ class AutoResponder(commands.Cog):
         color = discord.Colour.red()
         embed = get_embed(name="Delete", value=text, color=color)
 
-        await ctx.send(embed=embed, delete_after=get_delete_time())
-        await ctx.message.delete(delay=get_delete_time())
+        await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
+        await ctx.message.delete(delay=get_guild_delete_timer())
 
         trigger = await self.client.wait_for(
             'message', check=lambda m: m.author == current_user)
@@ -174,9 +175,9 @@ class AutoResponder(commands.Cog):
             embed = get_embed(name='Cancelled!',
                               value=cancel_response,
                               color=color)
-            await ctx.send(embed=embed, delete_after=get_delete_time())
-            await ctx.message.delete(delay=get_delete_time())
-            await message.delete(delay=get_delete_time())
+            await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
+            await ctx.message.delete(delay=get_guild_delete_timer())
+            await message.delete(delay=get_guild_delete_timer())
 
             self.client.load_extension(BASIC_COG)
             return
@@ -197,17 +198,19 @@ class AutoResponder(commands.Cog):
                 text = f'**Trigger**: "{trigger}"\n**Response**: "{response}" was **deleted** with success'
                 embed = get_embed(name="Deleted!", value=text, color=color)
 
-                await ctx.send(embed=embed, delete_after=get_delete_time())
-                await ctx.message.delete(delay=get_delete_time())
-                await message.delete(delay=get_delete_time())
+                await ctx.send(embed=embed,
+                               delete_after=get_guild_delete_timer())
+                await ctx.message.delete(delay=get_guild_delete_timer())
+                await message.delete(delay=get_guild_delete_timer())
             else:
 
                 embed = get_embed(name="Error!",
                                   value=f'**{trigger}** does not exist!',
                                   color=color)
-                await ctx.send(embed=embed, delete_after=get_delete_time())
-                await ctx.message.delete(delay=get_delete_time())
-                await message.delete(delay=get_delete_time())
+                await ctx.send(embed=embed,
+                               delete_after=get_guild_delete_timer())
+                await ctx.message.delete(delay=get_guild_delete_timer())
+                await message.delete(delay=get_guild_delete_timer())
         self.client.load_extension(BASIC_COG)
 
     @commands.command(name='add',
@@ -234,7 +237,7 @@ class AutoResponder(commands.Cog):
         text = f'**Add** a new **trigger**: (Or type **c** To **Cancel**)'
         embed = get_embed(name="Add", value=text, color=color)
 
-        await ctx.send(embed=embed, delete_after=get_delete_time())
+        await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
         self.client.unload_extension(BASIC_COG)
         trigger = await self.client.wait_for(
             'message', check=lambda m: m.author == current_user)
@@ -247,9 +250,9 @@ class AutoResponder(commands.Cog):
             embed = get_embed(name='Cancelled!',
                               value=cancel_response,
                               color=color)
-            await ctx.send(embed=embed, delete_after=get_delete_time())
-            await ctx.message.delete(delay=get_delete_time())
-            await message.delete(delay=get_delete_time())
+            await ctx.send(embed=embed, delete_after=get_guild_delete_timer())
+            await ctx.message.delete(delay=get_guild_delete_timer())
+            await message.delete(delay=get_guild_delete_timer())
 
             self.client.load_extension(BASIC_COG)
             return
@@ -260,9 +263,10 @@ class AutoResponder(commands.Cog):
                     value=f'*Trigger**: "{trigger}" already exists!',
                     color=color)
 
-                await ctx.send(embed=embed, delete_after=get_delete_time())
-                await ctx.message.delete(delay=get_delete_time())
-                await message.delete(delay=get_delete_time())
+                await ctx.send(embed=embed,
+                               delete_after=get_guild_delete_timer())
+                await ctx.message.delete(delay=get_guild_delete_timer())
+                await message.delete(delay=get_guild_delete_timer())
 
                 self.client.load_extension(BASIC_COG)
                 return
@@ -273,9 +277,10 @@ class AutoResponder(commands.Cog):
                                   value=text,
                                   color=color)
 
-                await ctx.send(embed=embed, delete_after=get_delete_time())
-                await ctx.message.delete(delay=get_delete_time())
-                await message.delete(delay=get_delete_time())
+                await ctx.send(embed=embed,
+                               delete_after=get_guild_delete_timer())
+                await ctx.message.delete(delay=get_guild_delete_timer())
+                await message.delete(delay=get_guild_delete_timer())
 
                 response = await self.client.wait_for(
                     'message', check=lambda m: m.author == current_user)
@@ -287,9 +292,10 @@ class AutoResponder(commands.Cog):
                                       value=cancel_response,
                                       color=color)
 
-                    await ctx.send(embed=embed, delete_after=get_delete_time())
-                    await ctx.message.delete(delay=get_delete_time())
-                    await message.delete(delay=get_delete_time())
+                    await ctx.send(embed=embed,
+                                   delete_after=get_guild_delete_timer())
+                    await ctx.message.delete(delay=get_guild_delete_timer())
+                    await message.delete(delay=get_guild_delete_timer())
 
                     self.client.load_extension(BASIC_COG)
                     return
@@ -298,9 +304,10 @@ class AutoResponder(commands.Cog):
                     text = f'Trigger: "{trigger}"\nResponse: "{response}" added with success!!'
                     embed = get_embed(name="Added!", value=text, color=color)
 
-                    await ctx.send(embed=embed, delete_after=get_delete_time())
-                    await ctx.message.delete(delay=get_delete_time())
-                    await message.delete(delay=get_delete_time())
+                    await ctx.send(embed=embed,
+                                   delete_after=get_guild_delete_timer())
+                    await ctx.message.delete(delay=get_guild_delete_timer())
+                    await message.delete(delay=get_guild_delete_timer())
 
                     trigger_response[trigger] = response
                     post = {'_id': int(ctx.guild.id)}
