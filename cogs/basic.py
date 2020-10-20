@@ -29,17 +29,27 @@ class Basic(commands.Cog):
 
         msg = ctx.content.strip()
         if not msg.startswith(self.client.command_prefix):
-            trigger = botfile.get_clean_trigger_from(msg, trigger_response)
+            if msg in trigger_response.keys():
+                embed = get_embed(msg, trigger_response[msg])
+                await ctx.channel.send(embed=embed)
+            else:
+                trigger = botfile.get_clean_trigger_from(msg, trigger_response)
 
-            if msg in trigger_response.keys(
-            ) or botfile.is_user_response_valid(msg, trigger_response):
+                if msg in trigger_response.keys(
+                ) or botfile.is_user_response_valid(msg, trigger_response):
 
-                embed = discord.Embed(colour=discord.Colour.gold())
-                text = trigger_response[trigger]
-                embed.add_field(name=trigger, value=text)
-                await ctx.channel.send(embed=embed, delete_after=delete_time)
-            elif ctx.content == 'raise-exception':
-                raise discord.DiscordException
+                    embed = get_embed(name=trigger,
+                                      value=trigger_response[trigger])
+                    await ctx.channel.send(embed=embed,
+                                           delete_after=delete_time)
+                elif ctx.content == 'raise-exception':
+                    raise discord.DiscordException
+
+
+def get_embed(name='title', value='hey', color=discord.Colour.gold()):
+    embed = discord.Embed(colour=color)
+    embed.add_field(name=name, value=value)
+    return embed
 
 
 def setup(client):
