@@ -28,9 +28,9 @@ def load_original_data_to(collection, file_name):
     filter_id = {'_id': file_data['_id']}
     collection.update_one(filter_id, {'$set': data})
 
-    #UPDATE github file data
-    updated_data = get_database_data(collection, filter_id)
-    update_file_in_github_repo('data/' + file_name, updated_data)
+    # #UPDATE github file data
+    # updated_data = get_database_data(collection, filter_id)
+    # update_file_in_github_repo('data/' + file_name, updated_data)
 
 
 def get_database(collection_name):

@@ -1,4 +1,3 @@
-from pymongo.collation import Collation
 from bot.mongodb import load_original_data_to
 from bot.filefunction import get_absolute_file_path, get_server_data_file_name, update_local_server_file
 import json
@@ -24,7 +23,7 @@ from cogs import auto_responder, server_info, basic, admin_config
 load_dotenv()
 
 #constants
-TOKEN = os.getenv('DISCORD_TOKEN_M')
+TOKEN = os.getenv('DISCORD_TOKEN_D')
 DEFAULT_PREFIX = '?'
 
 #decorator client
@@ -206,8 +205,6 @@ async def on_guild_update(before, after):
 @client.event
 async def on_ready():
     print('Bot is Ready')
-    await client.change_presence(status=discord.Status.online,
-                                 activity=discord.Game('Best Bot Game IV'))
     client_update()
 
 
@@ -219,6 +216,7 @@ async def on_member_remove(member):
 
 @client.event
 async def on_member_join(member):
+
     await member.guild.system_channel.send(
         f'**{member}** has join the server :smile:')
 
@@ -242,6 +240,8 @@ async def on_guild_join(guild):
     if not COLLECTION.find_one({'_id': int(guild.id)}):
         # insert the data to database and create a file in the github repo
         COLLECTION.insert_one(data)
+        load_original_data_to(COLLECTION, f'{guild.name}-{guild.id}.json')
+
     client_update()
 
 
@@ -259,10 +259,11 @@ async def on_guild_remove(guild):
 
 @client.event
 async def on_member_join(member):
+    pass
     # greet people when they join the server
-    await member.create_dm()
-    await member.dm_channel.send(
-        f'Hi {member.name}, welcome to my Discord server!')
+    # await member.create_dm()
+    # await member.dm_channel.send(
+    #     f'Hi {member.name}, welcome to my Discord server!')
 
 
 def load_cogs(path, folder):
@@ -272,14 +273,15 @@ def load_cogs(path, folder):
         client.load_extension(f'{folder}.{cog}')
 
 
+def get_collection():
+    return COLLECTION
+
+
 CLIENT, COLLECTION = mongodb.get_database('triggers')
 
 logging.basicConfig(filename='err.log', filemode='w', level=logging.INFO)
 
 load_cogs(os.path.join(os.getcwd(), 'cogs'), 'cogs')
-
-# LOAD ORIGINAL FILE
-# load_original_data_to(COLLECTION, '<FILE_NAME>')
 
 client.run(TOKEN)
 CLIENT.close()
