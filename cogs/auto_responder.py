@@ -47,9 +47,9 @@ class AutoResponder(commands.Cog):
         trigger = await self.client.wait_for(
             'message', check=lambda m: m.author == current_user)
         message = trigger
-        trigger = trigger.content.lower().strip()
+        trigger = trigger.content.strip()
 
-        if trigger == 'c':
+        if trigger.lower() == 'c':
             self.client.load_extension(BASIC_COG)
             embed.clear_fields()
             embed.add_field(name='Cancelled!', value=cancel_response)
@@ -162,8 +162,8 @@ class AutoResponder(commands.Cog):
             'message', check=lambda m: m.author == current_user)
 
         message = trigger
-        trigger = trigger.content.lower().strip()
-        if (trigger == 'c'):
+        trigger = trigger.content.strip()
+        if (trigger.lower() == 'c'):
             embed.clear_fields()
             embed.add_field(name='Cancelled!', value=cancel_response)
             await ctx.send(embed=embed, delete_after=get_delete_time())
@@ -231,9 +231,9 @@ class AutoResponder(commands.Cog):
             'message', check=lambda m: m.author == current_user)
 
         message = trigger
-        trigger = trigger.content.lower().strip()
+        trigger = trigger.content.strip()
 
-        if (trigger == 'c'):
+        if (trigger.lower() == 'c'):
             embed.clear_fields()
             embed.add_field(name='Cancelled!', value=cancel_response)
 
@@ -268,9 +268,9 @@ class AutoResponder(commands.Cog):
                 response = await self.client.wait_for(
                     'message', check=lambda m: m.author == current_user)
                 message = response
-                response = response.content.lower().strip()
+                response = response.content.strip()
 
-                if (response == 'c'):
+                if (response.lower() == 'c'):
                     embed.clear_fields()
                     embed.add_field(name='Cancelled!', value=cancel_response)
 

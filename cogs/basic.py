@@ -27,12 +27,12 @@ class Basic(commands.Cog):
         if cursor:
             trigger_response = dict(cursor)
 
-        msg = ctx.content.lower().strip()
+        msg = ctx.content.strip()
         if not msg.startswith(self.client.command_prefix):
             trigger = botfile.get_clean_trigger_from(msg, trigger_response)
 
-            if botfile.is_user_response_valid(
-                    msg, trigger_response) or msg in trigger_response.keys():
+            if msg in trigger_response.keys(
+            ) or botfile.is_user_response_valid(msg, trigger_response):
 
                 embed = discord.Embed(colour=discord.Colour.gold())
                 text = trigger_response[trigger]
