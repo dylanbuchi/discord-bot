@@ -1,2 +1,2 @@
 # Discord-bot
-creating a discord bot with the Discord API
+Creating a bot for the SwissBorg Discord Server.
