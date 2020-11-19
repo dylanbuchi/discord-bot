@@ -1,5 +1,5 @@
-# Discord-Bot-SB
-Creating a bot for the SwissBorg Discord Server.
+# Discord-Bot
+A discord bot made with Python for the SwissBorg discord server.
 
 ## Moderator commands (manage server permissions):
 
